@@ -20,6 +20,9 @@ This program gives you essential data to plan your observations:
 
 You need to have [Ruby](https://www.ruby-lang.org/en/) installed to use Astropanel.
 
+To have the star chart displayed, you need to have `w3m`installed (on Ubuntu:
+`apt-get install w3m`).
+
 The first time you launch Astropanel, it will ask for your location, Latitude
 and Longitude.
 
