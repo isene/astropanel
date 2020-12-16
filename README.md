@@ -23,8 +23,9 @@ You need to have [Ruby](https://www.ruby-lang.org/en/) installed to use Astropan
 To have the star chart displayed, you need to have `w3m`installed (on Ubuntu:
 `apt-get install w3m`).
 
-The first time you launch Astropanel, it will ask for your location, Latitude
-and Longitude.
+The first time you launch Astropanel (make astropanel.rb executable; `chmod +x
+astropanel.rb` and run it), it will ask for your location, Latitude and
+Longitude.
 
 When you start the program, it will show you the list of forecast points for
 today and the next 9 days (from https://met.no). The first couple of days are
