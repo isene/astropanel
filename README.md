@@ -18,6 +18,8 @@ This program gives you essential data to plan your observations:
 * A table showing RA, Dec, distance, rise, set and transit for the planets
 * Show today's Astronomy Picture Of the Day
 
+You need to have [Ruby](https://www.ruby-lang.org/en/) installed to use Astropanel.
+
 The first time you launch Astropanel, it will ask for your location, Latitude
 and Longitude.
 
