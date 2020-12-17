@@ -2,6 +2,7 @@
 
 Terminal program for amateur astronomers with weather forecast.
 
+## Functionality
 This program gives you essential data to plan your observations:
 
 * Weather forecast for the next 9 days with coloring (red/yellow/green) based
@@ -18,12 +19,14 @@ This program gives you essential data to plan your observations:
 * A table showing RA, Dec, distance, rise, set and transit for the planets
 * Show today's Astronomy Picture Of the Day
 
+## Requirements
 You need to have [Ruby](https://www.ruby-lang.org/en/) installed to use Astropanel.
 You also need to install the latest Ruby Curses library via `gem install curses`.
 
 To have the star chart displayed, you need to have `w3m`installed (on Ubuntu:
 `apt-get install w3m`).
 
+## Launching Astropanel
 The first time you launch Astropanel (make astropanel.rb executable; `chmod +x
 astropanel.rb` and run it), it will ask for your location, Latitude and
 Longitude.
@@ -33,8 +36,11 @@ today and the next 9 days (from https://met.no). The first couple of days are
 detailed down to each hour, while the rest of the days have 4 forecast points
 (hours 00, 06, 12 and 18). Time is for your local time zone.
 
-You can set the various limits as you see fit. Just press "?" to get the help
-for each possible key binding:
+When inside the program, you can set the various limits as you see fit. 
+
+## Keys
+
+Just press "?" to get the help for each possible key binding:
 
 ```
 KEYS
@@ -54,16 +60,15 @@ KEYS
 These should be self explanatory. Until I can figure out how to automatically
 fetch a location's Bortle value (light pollution), this is entered manually.
 
+## Quitting the program and saving configuration
 Location values you change in the program are written to the config file when
 you quit via "q". Use "Q" to quit without writing the values (if you want to
 see the forecast for different locations and not overwrite your preferred
 location data). Use 'W' to write new limit values to the config file.
 
+## Screencast
 Click on this screenshot to see a screencast that will give you a sense of how
 this application works:
 
 [![Astropanel screencast](/screenshot.png)](https://youtu.be/36jsu3YBLyw)
-
-
-
 
