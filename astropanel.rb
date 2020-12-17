@@ -55,23 +55,38 @@ begin # BASIC SETUP
   @w3mimgdisplay = "/usr/lib/w3m/w3mimgdisplay"
 
   # INITIALIZE VARIABLES 
+  @loc, @lat, @lon, @cloudlimit, @humiditylimit, @templimit, @windlimit = ""
   if File.exist?(Dir.home+'/.ap.conf')
     load(Dir.home+'/.ap.conf')
   else
-    puts "\nEnter Location (format like Europe/Oslo): "
-    @loc = Readline.readline('> ', true).chomp.to_s
-    puts "\nEnter Latitude (format like 59.4351 or -14.54):"
-    @lat = Readline.readline('> ', true).chomp.to_f
-    puts "\nEnter Longitude (between -180 and 180):"
-    @lon = Readline.readline('> ', true).chomp.to_f
-    puts "\nLimit for Cloud Coverage (format like 35 for 35%):"
-    @cloudlimit = Readline.readline('> ', true).chomp.to_i
-    puts "\nLimit for Humidity (format 70 for 70%):"
-    @humiditylimit = Readline.readline('> ', true).chomp.to_i
-    puts "\nMinimum observation temperature in °C (format like -15):"
-    @templimit =Readline.readline('> ', true).chomp.to_i
-    puts "\nLimit for Wind in m/s (format like 6):"
-    @windlimit = Readline.readline('> ', true).chomp.to_i
+    until @loc.match(/\w+\/\w+/)
+      puts "\nEnter Location (format like Europe/Oslo): "
+      @loc = Readline.readline('> ', true).chomp.to_s
+    end
+    until (-90.0..90.0).include?(@lat)
+      puts "\nEnter Latitude (format like 59.4351 or -14.54):"
+      @lat = Readline.readline('> ', true).chomp.to_f
+    end
+    until (-180.0..180.0).include?(@lon)
+      puts "\nEnter Longitude (between -180 and 180):"
+      @lon = Readline.readline('> ', true).chomp.to_f
+    end
+    until (0..100.0).include?(@cloudlimit)
+      puts "\nLimit for Cloud Coverage (format like 35 for 35%):"
+      @cloudlimit = Readline.readline('> ', true).chomp.to_i
+    end
+    until (0..100.0).include?(@humiditylimit)
+      puts "\nLimit for Humidity (format 70 for 70%):"
+      @humiditylimit = Readline.readline('> ', true).chomp.to_i
+    end
+    until (-100.0..100.0).include?(@templimit)
+      puts "\nMinimum observation temperature in °C (format like -15):"
+      @templimit =Readline.readline('> ', true).chomp.to_i
+    end
+    until (0..50.0).include?(@windlimit)
+      puts "\nLimit for Wind in m/s (format like 6):"
+      @windlimit = Readline.readline('> ', true).chomp.to_i
+    end
     conf =  "@loc = \"#{@loc}\"\n"
     conf += "@lat = #{@lat}\n"
     conf += "@lon = #{@lon}\n"
