@@ -262,7 +262,7 @@ class Ephemeris # THE CORE EPHEMERIS CLASS
     #["sun", "moon", "mercury", "venus", "mars", "jupiter", "saturn", "uranus", "neptune"].each do |p|
     ["mercury", "venus", "mars", "jupiter", "saturn", "uranus", "neptune"].each do |p|
       o     = self.body_calc(p)
-      n_o   = (p[0].upcase + p[1..]).ljust(7)
+      n_o   = (p[0].upcase + p[1..-1]).ljust(7)
       ra_o  = o[3].ljust(11)
       dec_o = o[4].ljust(12)
       d_o   = distf(o[2])[0..-3]
