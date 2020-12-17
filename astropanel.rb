@@ -41,6 +41,7 @@ begin # BASIC SETUP
   require 'json'
   require 'date'
   require 'time'
+  require 'readline'
   require 'curses'
   include  Curses
 
@@ -908,7 +909,7 @@ def image_show(image)# SHOW THE SELECTED IMAGE IN TOP RIGHT WINDOW
     char_w      = term_w / Curses.cols
     char_h      = term_h / Curses.lines
     img_x       = char_w * (@w_l_width + 1)
-    img_y       = char_h * (Curses.lines/2 + 1)
+    img_y       = char_h * (Curses.lines/2)
     img_max_w   = char_w * (Curses.cols - @w_l_width - 2)
     img_max_h   = char_h * (Curses.lines/2 - 2)
     if image == "clear"
