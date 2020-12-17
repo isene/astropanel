@@ -19,6 +19,7 @@ This program gives you essential data to plan your observations:
 * Show today's Astronomy Picture Of the Day
 
 You need to have [Ruby](https://www.ruby-lang.org/en/) installed to use Astropanel.
+You also need to install the latest Ruby Curses library via `gem install curses`.
 
 To have the star chart displayed, you need to have `w3m`installed (on Ubuntu:
 `apt-get install w3m`).
