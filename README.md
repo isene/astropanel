@@ -7,7 +7,7 @@ This program gives you essential data to plan your observations:
 
 * Weather forecast for the next 9 days with coloring (red/yellow/green) based
   on your limits for cloud cover, humidity, temperature and wind
-* Easy graphic representation of when the Sun, Moon and planets are visible
+* Graphic representation of when the Sun, Moon and planets are visible
   with the Moon's phase showing in how light the representing bar is
 * Extra information for each day: Fog, wind gust speed, dew point temperature,
   air pressure, UV Index, Sun and Moon precise rise and set and Moon phase.

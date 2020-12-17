@@ -260,8 +260,8 @@ class Ephemeris # THE CORE EPHEMERIS CLASS
     out   = "Planet  │ RA          │ Dec          │ Dist. │ Rise  │ Trans │ Set   \n"
     out  += "────────┼─────────────┼──────────────┼───────┼───────┼───────┼────── \n"
 
-    ["sun", "moon", "mercury", "venus", "mars", "jupiter", "saturn", "uranus", "neptune"].each do |p|
-    #["mercury", "venus", "mars", "jupiter", "saturn", "uranus", "neptune"].each do |p|
+    #["sun", "moon", "mercury", "venus", "mars", "jupiter", "saturn", "uranus", "neptune"].each do |p|
+    ["mercury", "venus", "mars", "jupiter", "saturn", "uranus", "neptune"].each do |p|
       o     = self.body_calc(p)
       n_o   = (p[0].upcase + p[1..-1]).ljust(7)
       ra_o  = o[3].ljust(11)
