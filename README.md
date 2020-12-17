@@ -54,10 +54,10 @@ KEYS
 These should be self explanatory. Until I can figure out how to automatically
 fetch a location's Bortle value (light pollution), this is entered manually.
 
-Values you change in the program are written to the config file when you quit
-via "q". Use "Q" to quit without writing the values (if you want to see the
-forecast for different locations and not overwrite your preferred location
-data).
+Location values you change in the program are written to the config file when
+you quit via "q". Use "Q" to quit without writing the values (if you want to
+see the forecast for different locations and not overwrite your preferred
+location data). Use 'W' to write new limit values to the config file.
 
 Click on this screenshot to see a screencast that will give you a sense of how
 this application works:
