@@ -72,13 +72,13 @@ begin # BASIC SETUP
     @templimit =Readline.readline('> ', true).chomp.to_i
     puts "\nLimit for Wind in m/s (format like 6):"
     @windlimit = Readline.readline('> ', true).chomp.to_i
-    conf =  "@loc = \"#{@loc}\""
-    conf += "@lat = #{@lat}"
-    conf += "@lon = #{@lon}"
-    conf += "@cloudlimit = #{@cloudlimit}"
-    conf += "@humiditylimit = #{@humiditylimit}"
-    conf += "@templimit = #{@templimit}"
-    conf += "@windlimit = #{@windlimit}"
+    conf =  "@loc = \"#{@loc}\"\n"
+    conf += "@lat = #{@lat}\n"
+    conf += "@lon = #{@lon}\n"
+    conf += "@cloudlimit = #{@cloudlimit}\n"
+    conf += "@humiditylimit = #{@humiditylimit}\n"
+    conf += "@templimit = #{@templimit}\n"
+    conf += "@windlimit = #{@windlimit}\n"
     File.write(Dir.home+'/.ap.conf', conf)
   end
   ## Don't change these
@@ -260,8 +260,8 @@ class Ephemeris # THE CORE EPHEMERIS CLASS
     out   = "Planet  │ RA          │ Dec          │ Dist. │ Rise  │ Trans │ Set   \n"
     out  += "────────┼─────────────┼──────────────┼───────┼───────┼───────┼────── \n"
 
-    #["sun", "moon", "mercury", "venus", "mars", "jupiter", "saturn", "uranus", "neptune"].each do |p|
-    ["mercury", "venus", "mars", "jupiter", "saturn", "uranus", "neptune"].each do |p|
+    ["sun", "moon", "mercury", "venus", "mars", "jupiter", "saturn", "uranus", "neptune"].each do |p|
+    #["mercury", "venus", "mars", "jupiter", "saturn", "uranus", "neptune"].each do |p|
       o     = self.body_calc(p)
       n_o   = (p[0].upcase + p[1..-1]).ljust(7)
       ra_o  = o[3].ljust(11)
