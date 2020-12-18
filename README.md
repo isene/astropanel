@@ -31,6 +31,9 @@ To have the star chart displayed, you need to have `imagemagick` and `w3m` insta
 To get all prerequisites installed on Ubuntu:
 `apt-get install ruby-full git libncurses-dev x11-utils xdotool imagemagick w3m`
 
+And on Arch:
+`pacman -S ruby git xorg-xwininfo xdotool imagemagick w3m`
+
 ## Launching Astropanel
 The first time you launch Astropanel (make astropanel.rb executable; `chmod +x
 astropanel.rb` and run it), it will ask for your location, Latitude and
