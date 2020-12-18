@@ -15,13 +15,16 @@ This program gives you essential data to plan your observations:
   full moon.
 * Astronomical events for each of the 9 days, with option to list them in one
   view
-* Starchart showing in the terminal for the selected day and time of day
+* Star chart showing in the terminal for the selected day and time of day
 * A table showing RA, Dec, distance, rise, set and transit for the planets
 * Show today's Astronomy Picture Of the Day
 
 ## Requirements
 You need to have [Ruby](https://www.ruby-lang.org/en/) installed to use Astropanel.
 You also need to install the latest Ruby Curses library via `gem install curses`.
+
+Then there are two basic prerequisites needed: `x11-utils` and `xdotool`. On
+Ubuntu these would be installed via `apt-get install x11-utils xdotool`.
 
 To have the star chart displayed, you need to have `w3m`installed (on Ubuntu:
 `apt-get install w3m`).

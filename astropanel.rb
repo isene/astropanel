@@ -42,6 +42,7 @@ begin # BASIC SETUP
   require 'date'
   require 'time'
   require 'readline'
+  require 'io/console'
   require 'curses'
   include  Curses
 
@@ -498,7 +499,7 @@ def getchr # PROCESS KEY PRESSES
   # Note: Curses.getch blanks out @w_t
   # @w_l.getch makes Curses::KEY_DOWN etc not work
   # Therefore resorting to the generic method
-  c = STDIN.getc
+  c = STDIN.getch(min: 0, time: 5)
   case c
   when "\e"    # ANSI escape sequences
     case $stdin.getc
