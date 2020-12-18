@@ -150,12 +150,13 @@ class Ephemeris # THE CORE EPHEMERIS CLASS
     "M" => 356.0470 + 0.98555 * @d},
     #"M" => 356.0470 + 0.9856002585 * @d},
   "moon" => {
+    #"N" => 125.1228 - 0.05283 * @d,
     "N" => 125.1228 - 0.0529538083 * @d,
     "i" => 5.1454,
     "w" => 318.0634 + 0.1643573223 * @d,
     "a" => 60.2666, 
     "e" => 0.054900,
-    "M" => 115.3654 + 13.06478 * @d},
+    "M" => 115.3654 + 13.06605 * @d},
     #"M" => 115.3654 + 13.0649929509 * @d},
   "mercury" => {
     "N" => 48.3313 + 3.24587e-5 * @d,
@@ -243,11 +244,11 @@ class Ephemeris # THE CORE EPHEMERIS CLASS
     self.alt_az(self.body_calc(body)[0], self.body_calc(body)[1], time)
   end
 
-  def rts(ra, dec)
+  def rts(ra, dec, h)
     pi      = Math::PI
     transit = (ra - @ls - @lon)/15 + 12 + @tz
     transit = (transit + 24) % 24
-    cos_lha = (-Math.sin(@lat.deg) * Math.sin(dec.deg)) / (Math.cos(@lat.deg) * Math.cos(dec.deg))
+    cos_lha = (Math.sin(h.deg) - (Math.sin(@lat.deg)*Math.sin(dec.deg))) / (Math.cos(@lat.deg) * Math.cos(dec.deg))
     if cos_lha < -1
       rise  = "always"
       set   = "never"
@@ -276,13 +277,13 @@ class Ephemeris # THE CORE EPHEMERIS CLASS
     out   = "Planet  │ RA          │ Dec          │ Dist. │ Rise  │ Trans │ Set   \n"
     out  += "────────┼─────────────┼──────────────┼───────┼───────┼───────┼────── \n"
 
-    #["sun", "moon", "mercury", "venus", "mars", "jupiter", "saturn", "uranus", "neptune"].each do |p|
-    ["mercury", "venus", "mars", "jupiter", "saturn", "uranus", "neptune"].each do |p|
+    ["sun", "moon", "mercury", "venus", "mars", "jupiter", "saturn", "uranus", "neptune"].each do |p|
+    #["mercury", "venus", "mars", "jupiter", "saturn", "uranus", "neptune"].each do |p|
       o     = self.body_calc(p)
       n_o   = (p[0].upcase + p[1..-1]).ljust(7)
       ra_o  = o[3].ljust(11)
       dec_o = o[4].ljust(12)
-      d_o   = distf(o[2])[0..-3]
+      o[2].class == Float ? d_o = distf(o[2])[0..-3] : d_o = o[2]
       ris_o = o[5][0..-4].rjust(5)
       tra_o = o[6][0..-4].rjust(5)
       set_o = o[7][0..-4].rjust(5)
@@ -319,9 +320,9 @@ class Ephemeris # THE CORE EPHEMERIS CLASS
       xeclip  = r * (Math.cos(n_b.deg) * Math.cos((v+w_b).deg) - Math.sin(n_b.deg) * Math.sin((v+w_b).deg) * Math.cos(i_b.deg))
       yeclip  = r * (Math.sin(n_b.deg) * Math.cos((v+w_b).deg) + Math.cos(n_b.deg) * Math.sin((v+w_b).deg) * Math.cos(i_b.deg))
       zeclip  = r * Math.sin((v+w_b).deg) * Math.sin(i_b.deg)
-      lon     =  (Math.atan2(yeclip, xeclip)*180/pi + 360) % 360
-      lat     =  Math.atan2(zeclip, Math.sqrt(xeclip*xeclip + yeclip*yeclip))*180/pi
-      r_b     =  Math.sqrt(xeclip*xeclip + yeclip*yeclip + zeclip*zeclip)
+      lon     = (Math.atan2(yeclip, xeclip)*180/pi + 360) % 360
+      lat     = Math.atan2(zeclip, Math.sqrt(xeclip*xeclip + yeclip*yeclip))*180/pi
+      r_b     = Math.sqrt(xeclip*xeclip + yeclip*yeclip + zeclip*zeclip)
       m_J     = @body["jupiter"]["M"] 
       m_S     = @body["saturn"]["M"] 
       m_U     = @body["uranus"]["M"] 
@@ -373,13 +374,13 @@ class Ephemeris # THE CORE EPHEMERIS CLASS
         plon  +=  0.035 * Math.sin((m_S - 3*m_U + 33).deg)
         plon  += -0.015 * Math.sin((m_J - m_U + 20).deg)
       end
-      lon   += plon
-      lat   += plat
-      r_b   += pdist
+      lon     += plon
+      lat     += plat
+      r_b     += pdist
       if body == "moon"
-        xeclip  = Math.cos(lon.deg) * Math.cos(lat.deg)
-        yeclip  = Math.sin(lon.deg) * Math.cos(lat.deg)
-        zeclip  = Math.sin(lat.deg)
+        xeclip = Math.cos(lon.deg) * Math.cos(lat.deg)
+        yeclip = Math.sin(lon.deg) * Math.cos(lat.deg)
+        zeclip = Math.sin(lat.deg)
       else
         xeclip += @xs
         yeclip += @ys
@@ -400,7 +401,17 @@ class Ephemeris # THE CORE EPHEMERIS CLASS
       ra      = topRA.round(4)
       dec     = topDecl.round(4)
       r       = Math.sqrt(xequat*xequat + yequat*yequat + zequat*zequat).round(4)
-      ri, tr, se = self.rts(ra, dec)
+      h       = 0
+      if body == "moon"
+        r     = "  -  "
+        h     = -0.833 
+      elsif body == "sun"
+        ra    = @ra_s
+        dec   = @dec_s
+        r     = 1.0
+        h     = -0.833
+      end
+      ri, tr, se = self.rts(ra, dec, h)
       object  = [ra, dec, r, self.hms_dms(ra, dec), ri, tr, se].flatten
       return object
     end
@@ -434,16 +445,16 @@ class Ephemeris # THE CORE EPHEMERIS CLASS
     ze       = @ys * Math.sin(@ecl.deg)
     r        = Math.sqrt(xe*xe + ye*ye + ze*ze)
     ra       = Math.atan2(ye,xe)*180/pi
-    ra_s     = ((ra + 360)%360).round(4)
-    dec_s    = (Math.atan2(ze,Math.sqrt(xe*xe + ye*ye))*180/pi).round(4)
+    @ra_s     = ((ra + 360)%360).round(4)
+    @dec_s    = (Math.atan2(ze,Math.sqrt(xe*xe + ye*ye))*180/pi).round(4)
 
     @ls      = (w_s + @ms)%360
     gmst0   = (@ls + 180)/15%24
     @sidtime = gmst0 + @lon/15 
     
-    @alt_s, @az_s = self.alt_az(ra_s, dec_s, @sidtime)
+    @alt_s, @az_s = self.alt_az(@ra_s, @dec_s, @sidtime)
 
-    @sun     = [ra_s, dec_s, 1.0, self.hms_dms(ra_s, dec_s)].flatten 
+    @sun     = [@ra_s, @dec_s, 1.0, self.hms_dms(@ra_s, @dec_s)].flatten 
     @moon    = self.body_calc("moon").flatten
     @mercury = self.body_calc("mercury").flatten
     @venus   = self.body_calc("venus").flatten
@@ -535,34 +546,48 @@ def main_getkey # GET KEY FROM USER
     w_u_msg(@help)
   when 'UP'
     @index = @index <= @min_index ? @max_index : @index - 1
+    @w_u.update = true
   when 'DOWN'
     @index = @index >= @max_index ? @min_index : @index + 1
+    @w_u.update = true
   when 'PgUP'
     @index -= @w_l.maxy - 2
     @index = @min_index if @index < @min_index
+    @w_u.update = true
   when 'PgDOWN'
     @index += @w_l.maxy - 2
     @index = @max_index if @index > @max_index
+    @w_u.update = true
   when 'HOME'
     @index = @min_index
+    @w_u.update = true
   when 'END'
     @index = @max_index
+    @w_u.update = true
   when 'l'
     @loc = w_b_getstr("Loc: ", @loc)
+    @w_u.update = true
   when 'a'
     @lat = w_b_getstr("Lat: ", @lat.to_s).to_f
+    @w_u.update = true
   when 'o'
     @lon = w_b_getstr("Lon: ", @lon.to_s).to_f
+    @w_u.update = true
   when 'c'
     @cloudlimit = w_b_getstr("Cloudlimit: ", @cloudlimit.to_s).to_i
+    @w_u.update = true
   when 'h'
     @humiditylimit = w_b_getstr("Humiditylimit: ", @humiditylimit.to_s).to_i
+    @w_u.update = true
   when 't'
     @templimit = w_b_getstr("Templimit: ", @templimit.to_s).to_i
+    @w_u.update = true
   when 'w'
     @windlimit = w_b_getstr("Windlimit: ", @windlimit.to_s).to_i
+    @w_u.update = true
   when 'b'
     @bortle = w_b_getstr("Bortle: ", @bortle.to_s).to_i
+    @w_u.update = true
   when 'e'
     ev = "\nUPCOMING EVENTS:\n\n"
     @events.each do |key, val|  
@@ -591,6 +616,7 @@ def main_getkey # GET KEY FROM USER
     image_show(@image)
   when 'ENTER' # Refresh image
     image_show(@image)
+    @w_u.update = true
   when 'r' # Refresh all windows 
     @break = true
   when '@' # Enter "Ruby debug"
@@ -604,8 +630,6 @@ def main_getkey # GET KEY FROM USER
       w_b_info("Error: #{e.inspect}")
     end
     @w_b.update = false
-  when ';' # Show command history 
-    w_u_info("Command history (latest on top):\n\n" + @history.join("\n"))
   when 'R' # Reload .ap.conf
     if File.exist?(Dir.home+'/.ap.conf')
       load(Dir.home+'/.ap.conf')
@@ -1096,7 +1120,6 @@ loop do # OUTER LOOP - (catching refreshes via 'r')
       # Left and right windows (browser & content viewer)
       w_l_info
       w_u_info if @w_u.update
-      @w_u.update = true
       Curses.curs_set(1) # Clear residual cursor
       Curses.curs_set(0) # ...from editing files 
       main_getkey        # Get key from user 
