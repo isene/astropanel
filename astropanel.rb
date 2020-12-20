@@ -137,7 +137,7 @@ class Numeric # NUMERIC CLASS EXTENSION
 end
 class Ephemeris # THE CORE EPHEMERIS CLASS
   # The repo for this class: https://github.com/isene/ephemeris
-  attr_reader :sun, :moon, :mercury, :venus, :mars, :jupiter, :saturn, :uranus, :neptune
+  attr_reader :sun, :moon, :mphase, :mph_s, :mercury, :venus, :mars, :jupiter, :saturn, :uranus, :neptune
   
   def body_data
   @body = {
@@ -156,7 +156,7 @@ class Ephemeris # THE CORE EPHEMERIS CLASS
     "w" => 318.0634 + 0.1643573223 * @d,
     "a" => 60.2666, 
     "e" => 0.054900,
-    "M" => 115.3654 + 13.06605 * @d},
+    "M" => 115.3654 + 13.06447 * @d},
     #"M" => 115.3654 + 13.0649929509 * @d},
   "mercury" => {
     "N" => 48.3313 + 3.24587e-5 * @d,
@@ -278,7 +278,6 @@ class Ephemeris # THE CORE EPHEMERIS CLASS
     out  += "────────┼─────────────┼──────────────┼───────┼───────┼───────┼────── \n"
 
     ["sun", "moon", "mercury", "venus", "mars", "jupiter", "saturn", "uranus", "neptune"].each do |p|
-    #["mercury", "venus", "mars", "jupiter", "saturn", "uranus", "neptune"].each do |p|
       o     = self.body_calc(p)
       n_o   = (p[0].upcase + p[1..-1]).ljust(7)
       ra_o  = o[3].ljust(11)
@@ -454,8 +453,33 @@ class Ephemeris # THE CORE EPHEMERIS CLASS
     
     @alt_s, @az_s = self.alt_az(@ra_s, @dec_s, @sidtime)
 
-    @sun     = [@ra_s, @dec_s, 1.0, self.hms_dms(@ra_s, @dec_s)].flatten 
+    @sun     = self.body_calc("sun").flatten 
     @moon    = self.body_calc("moon").flatten
+    
+    mp       = 29.530588861
+    nm       = 2459198.177777778
+    jd       = Date.parse(date).ajd.to_f
+    @mphase  = 100*((jd - nm) % mp) / mp 
+    if @mphase < 2.5
+      @mph_s = "New moon"
+    elsif @mphase < 27.5
+      @mph_s = "Waxing crescent"
+    elsif @mphase < 32.5
+      @mph_s = "First quarter"
+    elsif @mphase < 47.5
+      @mph_s = "Waxing gibbous"
+    elsif @mphase < 52.5
+      @mph_s = "Full moon"
+    elsif @mphase < 72.5
+      @mph_s = "Waning gibbous"
+    elsif @mphase < 77.5
+      @mph_s = "Last quarter"
+    elsif @mphase < 97.5
+      @mph_s = "Waning crescent"
+    else
+      @mph_s = "New moon"
+    end
+
     @mercury = self.body_calc("mercury").flatten
     @venus   = self.body_calc("venus").flatten
     @mars    = self.body_calc("mars").flatten
@@ -510,7 +534,8 @@ def getchr # PROCESS KEY PRESSES
   # Note: Curses.getch blanks out @w_t
   # @w_l.getch makes Curses::KEY_DOWN etc not work
   # Therefore resorting to the generic method
-  c = STDIN.getch(min: 0, time: 5)
+  c = STDIN.getc
+  #c = STDIN.getch(min: 0, time: 5)
   case c
   when "\e"    # ANSI escape sequences
     case $stdin.getc
@@ -594,10 +619,6 @@ def main_getkey # GET KEY FROM USER
       ev += key + " " + val["time"] + " " + val["event"] + "\n"
     end
     w_u_msg(ev)
-  when 'p'
-    info  = @weather[@index][3].split("\n")[0][0..-7] + "\n\n"
-    info += @planets[@weather[@index][0]]["table"]
-    w_u_msg(info)
   when 's'
     starchart
     @image = "/tmp/starchart.jpg"
@@ -686,15 +707,20 @@ def get_weather # WEATHER FORECAST FROM MET.NO
     wind += wdir.rjust(2)
     wthr += wind.rjust(10) + ")"
     info  = date + " (" + Date.parse(date).strftime("%A") + ") #{hour}:00\n\n" 
-    info += "Cloud cover (-/+)  " + details["cloud_area_fraction"].to_i.to_s + "% (" 
-    info += details["cloud_area_fraction_low"].to_i.to_s + "% " + details["cloud_area_fraction_high"].to_i.to_s + "%)\n"
+    cld   = "Clouds (-/+)  " + details["cloud_area_fraction"].to_i.to_s + "% (" 
+    cld  += details["cloud_area_fraction_low"].to_i.to_s + "% " + details["cloud_area_fraction_high"].to_i.to_s + "%)"
+    info += cld.ljust(37)
     details["fog_area_fraction"] == 0 ? fog = "-" : fog = (details["fog_area_fraction"].to_f.round(1)).to_s + "%" 
-    info += "Humidity/Fog       " + details["relative_humidity"].to_s + "% / " + fog + "\n"
-    info += "Temp (dew point)   " + details["air_temperature"].to_s + "°C ("
+    info += "Humidity (fog)  " + details["relative_humidity"].to_s + "% (" + fog + ")\n"
+    wnd   = "Wind [gusts]  " + details["wind_speed"].to_s + " m/s (" + wdir + ") [" + details["wind_speed_of_gust"].to_s + " m/s]"
+    info += wnd.ljust(37)
+    info += "Temp (dew)      " + details["air_temperature"].to_s + "°C ("
     info += details["dew_point_temperature"].to_s + "°C)\n"
-    info += "Wind [gust speed]  " + details["wind_speed"].to_s + " m/s (" + wdir + ") [" + details["wind_speed_of_gust"].to_s + " m/s]\n"
-    info += "Air pressure       " + details["air_pressure_at_sea_level"].to_i.to_s + " hPa\n"
-    info += "UV index           " + details["ultraviolet_index_clear_sky"].to_s + "\n"
+    air   = "Air pressure  " + details["air_pressure_at_sea_level"].to_i.to_s + " hPa   "
+    info += air.ljust(37)
+    uv    = details["ultraviolet_index_clear_sky"].to_s
+    uv    = "-" if uv == ""
+    info += "UV index        " + uv + "\n"
     @weather.push([date, hour, wthr, info])
   end
 end
@@ -721,10 +747,13 @@ def get_astro # ASTRONOMICAL DATA FROM MET.NO (official and precise)
 end
 def get_planets # PLANET EPHEMERIS DATA
   planets = {}
-  10.times do |x|
-    date          = (Time.now + 86400 * x).strftime("%F")
+  12.times do |x|
+    date          = (Time.now + 86400 * (x - 1)).strftime("%F")
     p             = Ephemeris.new(date, @lat, @lon, @tz.to_i)
     planets[date] = {"table" => p.print, 
+                     "srise" => p.sun[5],     "sset" => p.sun[7],
+                     "mrise" => p.moon[5],    "mset" => p.moon[7],
+                     "phase" => p.mphase,     "ph_s" => p.mph_s,
                      "Mrise" => p.mercury[5], "Mset" => p.mercury[7],
                      "Vrise" => p.venus[5],   "Vset" => p.venus[7],
                      "Arise" => p.mars[5],    "Aset" => p.mars[7],
@@ -807,15 +836,15 @@ def w_t_info # SHOW INFO IN @w_t
 end
 # LEFT WINDOW FUNCTIONS
 def print_sm(ix, date, rise, set, c0, c1, c2)
-  if @astro[date][set][0..1] < @astro[date][rise][0..1] and @weather[ix][1] <= @astro[date][set][0..1]
+  if @planets[date][set][0..1] < @planets[date][rise][0..1] and @weather[ix][1] <= @planets[date][set][0..1]
     @w_l.p(c0,c0,0," ")
-  elsif @astro[date][set][0..1] < @astro[date][rise][0..1] and @weather[ix][1] >= @astro[date][rise][0..1]
+  elsif @planets[date][set][0..1] < @planets[date][rise][0..1] and @weather[ix][1] >= @planets[date][rise][0..1]
     @w_l.p(c0,c0,0," ")
-  elsif @weather[ix][1] > @astro[date][rise][0..1] and @weather[ix][1] < @astro[date][set][0..1]
+  elsif @weather[ix][1] > @planets[date][rise][0..1] and @weather[ix][1] < @planets[date][set][0..1]
     @w_l.p(c0,c0,0," ")
-  elsif @weather[ix][1] == @astro[date][rise][0..1]
+  elsif @weather[ix][1] == @planets[date][rise][0..1]
     @w_l.p(c1,c1,0," ")
-  elsif @weather[ix][1] == @astro[date][set][0..1]
+  elsif @weather[ix][1] == @planets[date][set][0..1]
     @w_l.p(c2,c2,0," ")
   else
     @w_l << " "
@@ -856,10 +885,10 @@ def w_l_info # SHOW WEATHER CONDITION AND RISE/SET IN @w_l
     end
     begin
       @w_l.attron(color) { @w_l << line }
-      print_sm(ix, date, "sunrise", "sunset", 226, 193, 214)
-      @w_l << " "
-      c0 = ((50 - (@astro[date]["moonphase"] - 50).abs)/2.7 + 237).to_i
-      print_sm(ix, date, "moonrise", "moonset", c0, 110, 109)
+      print_sm(ix, date, "srise", "sset", 226, 193, 214)
+      @w_l << "  "
+      c0 = ((50 - (@planets[date]["phase"] - 50).abs)/2.7 + 237).to_i
+      print_sm(ix, date, "mrise", "mset", c0, 110, 109)
       print_p(ix, date, "Mrise", "Mset", 130)
       print_p(ix, date, "Vrise", "Vset", 153)
       print_p(ix, date, "Arise", "Aset", 124)
@@ -888,7 +917,10 @@ def w_u_info # ASTRO INFO IN @w_u
   @w_u.clr
   color  = color_pair(get_cond(@index)) 
   info   = @weather[@index][3].split("\n")
-  @w_u.attron(color) { @w_u << info[0] }
+  mp_n   = (@planets[@weather[@index][0]]["phase"]).round(1)
+  mp_s   = @planets[@weather[@index][0]]["ph_s"]
+  title  = info[0] + " (Moon: #{mp_n} = #{mp_s})"
+  @w_u.attron(color) { @w_u << title }
   @w_u.write
   info.shift
   @w_u.maxx < Curses.cols ? maxx = @w_u.maxx : maxx = Curses.cols
@@ -898,35 +930,38 @@ def w_u_info # ASTRO INFO IN @w_u
   end
   @w_u.text  = info.join("\n")
   @w_u.text += "\n\n"
+  @w_u.text += @planets[@weather[@index][0]]["table"]
+  @w_u.write
   date = @weather[@index][0]
-  begin
-    @w_u.text += "Sunrise/set        " + @astro[date]["sunrise"] + " / " + @astro[date]["sunset"] + "\n"
-    @w_u.text += "Moonrise/set       " + @astro[date]["moonrise"] + " / " + @astro[date]["moonset"] + "\n" 
-    phase = @astro[date]["moonphase"]
-    if phase < 2.5
-      phrase = "New moon"
-    elsif phase < 27.5
-      phrase = "Waxing crescent"
-    elsif phase < 32.5
-      phrase = "First quarter"
-    elsif phase < 47.5
-      phrase = "Waxing gibbous"
-    elsif phase < 52.5
-      phrase = "Full moon"
-    elsif phase < 72.5
-      phrase = "Waning gibbous"
-    elsif phase < 77.5
-      phrase = "Last quarter"
-    elsif phase < 97.5
-      phrase = "Waning crescent"
-    else
-      phrase = "New moon"
-    end
-    @w_u.text += "Moon phase         " + @astro[date]["moonphase"].to_s + " (#{phrase})"
-    @w_u.write
-  rescue
-  end
-  @w_u << "\n\n"
+
+ #begin
+ #  @w_u.text += "Sunrise/set        " + @astro[date]["sunrise"] + " / " + @astro[date]["sunset"] + "\n"
+ #  @w_u.text += "Moonrise/set       " + @astro[date]["moonrise"] + " / " + @astro[date]["moonset"] + "\n" 
+ #  phase = @astro[date]["moonphase"]
+ #  if phase < 2.5
+ #    phrase = "New moon"
+ #  elsif phase < 27.5
+ #    phrase = "Waxing crescent"
+ #  elsif phase < 32.5
+ #    phrase = "First quarter"
+ #  elsif phase < 47.5
+ #    phrase = "Waxing gibbous"
+ #  elsif phase < 52.5
+ #    phrase = "Full moon"
+ #  elsif phase < 72.5
+ #    phrase = "Waning gibbous"
+ #  elsif phase < 77.5
+ #    phrase = "Last quarter"
+ #  elsif phase < 97.5
+ #    phrase = "Waning crescent"
+ #  else
+ #    phrase = "New moon"
+ #  end
+ #  @w_u.text += "Moon phase         " + @astro[date]["moonphase"].to_s + " (#{phrase})"
+ #  @w_u.write
+ #rescue
+ #end
+  @w_u << "\n"
   if @events.has_key?(date)
     text  = "@ " + @events[date]["time"] + ": "
     text += @events[date]["event"] + "\n"
@@ -949,12 +984,13 @@ def image_show(image)# SHOW THE SELECTED IMAGE IN TOP RIGHT WINDOW
     char_w      = term_w / Curses.cols
     char_h      = term_h / Curses.lines
     img_x       = char_w * (@w_l_width + 1)
-    img_y       = char_h * (Curses.lines/2)
+    img_y       = char_h * 23
     img_max_w   = char_w * (Curses.cols - @w_l_width - 2)
-    img_max_h   = char_h * (Curses.lines/2 - 2)
+    img_max_h   = char_h * (@w_d.maxy - 2)
     if image == "clear"
+      img_y     -= char_h
       img_max_w += 2
-      img_max_h += 2
+      img_max_h += char_ h + 2
       `echo "6;#{img_x};#{img_y};#{img_max_w};#{img_max_h};\n4;\n3;" | #{@w3mimgdisplay}`
     else
       img_w,img_h = `identify -format "%[fx:w]x%[fx:h]" #{image} 2>/dev/null`.split('x')
@@ -1098,8 +1134,8 @@ loop do # OUTER LOOP - (catching refreshes via 'r')
     @w_t = Curses::Window.new(1, maxx, 0, 0)
     @w_b = Curses::Window.new(1, maxx, maxy - 1, 0)
     @w_l = Curses::Window.new(maxy - 2, @w_l_width - 1, 1, 0)
-    @w_u = Curses::Window.new(maxy/2 - 1, maxx - @w_l_width, 1, @w_l_width)
-    @w_d = Curses::Window.new(maxy/2, maxx - @w_l_width, maxy/2, @w_l_width)
+    @w_u = Curses::Window.new(21, maxx - @w_l_width, 1, @w_l_width)
+    @w_d = Curses::Window.new(maxy - 23, maxx - @w_l_width, 23, @w_l_width)
     @w_t.fg, @w_t.bg = 7, 19
     @w_t.attr        = Curses::A_BOLD
     @w_b.fg, @w_b.bg = 7, 17

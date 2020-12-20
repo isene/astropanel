@@ -23,16 +23,15 @@ This program gives you essential data to plan your observations:
 You need to have [Ruby](https://www.ruby-lang.org/en/) installed to use Astropanel.
 You also need to install the latest Ruby Curses library via `gem install curses`.
 
-Then there are two basic prerequisites needed: `x11-utils` and `xdotool`. On
-Ubuntu these would be installed via `apt-get install x11-utils xdotool`.
+Then there are two basic prerequisites needed: `x11-utils` and `xdotool`.
 
-To have the star chart displayed, you need to have `imagemagick` and `w3m` installed.
+To have the star chart displayed, you need to have `imagemagick` and `w3m-img` installed.
 
 To get all prerequisites installed on Ubuntu:
-`apt-get install ruby-full git libncurses-dev x11-utils xdotool imagemagick w3m`
+`apt-get install ruby-full git libncurses-dev x11-utils xdotool imagemagick w3m-img`
 
 And on Arch:
-`pacman -S ruby git xorg-xwininfo xdotool imagemagick w3m`
+`pacman -S ruby git xorg-xwininfo xdotool imagemagick w3m-img`
 
 ## Launching Astropanel
 The first time you launch Astropanel (make astropanel.rb executable; `chmod +x
