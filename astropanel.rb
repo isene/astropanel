@@ -26,12 +26,9 @@ KEYS
  o = Edit Longitude                S = Open starchart in image program
  c = Edit Cloud limit              A = Show Astronomy Picture Of the Day
  h = Edit Humidity limit           e = Show upcoming events
- t = Edit Temperature limit        p = Show info on planets
- w = Edit Wind limit
- b = Edit Bortle value
- W = Write to config file           
- q = Quit (write to config file)
- Q = Quit (no config write)
+ t = Edit Temperature limit        W = Write to config file       
+ w = Edit Wind limit               q = Quit (write to config file)
+ b = Edit Bortle value             Q = Quit (no config write)     
 
 COPYRIGHT: Geir Isene, 2020. No rights reserved. See http://isene.com for more.
 HELPTEXT
