@@ -274,7 +274,7 @@ class Ephemeris # THE CORE EPHEMERIS CLASS
       return int + frc[1..5]
     end
 
-    out   = "Planet  │ RA          │ Dec          │ Dist. │ Rise  │ Trans │ Set   \n"
+    out   = "Planet  │ RA          │ Dec          │ d=AU  │ Rise  │ Trans │ Set   \n"
     out  += "────────┼─────────────┼──────────────┼───────┼───────┼───────┼────── \n"
 
     ["sun", "moon", "mercury", "venus", "mars", "jupiter", "saturn", "uranus", "neptune"].each do |p|
@@ -1120,7 +1120,7 @@ loop do # OUTER LOOP - (catching refreshes via 'r')
   @time  = Time.now.strftime("%H:%M")
   get_weather
   @planets = get_planets
-  @astro  = get_astro
+  #@astro  = get_astro
   @events = get_events
   Thread.new {starchart}
   Thread.new {apod}
