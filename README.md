@@ -16,6 +16,7 @@ This program gives you essential data to plan your observations:
 * Astronomical events for each of the 9 days, with option to list them in one
   view
 * Star chart showing in the terminal for the selected day and time of day
+  PS: The star chart is only generated for latitudes above +23
 * A table showing RA, Dec, distance, rise, set and transit for the planets
 * Show today's Astronomy Picture Of the Day
 
@@ -32,6 +33,9 @@ To get all prerequisites installed on Ubuntu:
 
 And on Arch:
 `pacman -S ruby git xorg-xwininfo xdotool imagemagick w3m-img`
+
+Also, images like the star chart and APOD is only reliably tested on the URXVT
+terminal emulator.
 
 ## Launching Astropanel
 The first time you launch Astropanel (make astropanel.rb executable; `chmod +x

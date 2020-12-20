@@ -532,7 +532,7 @@ def getchr # PROCESS KEY PRESSES
   # @w_l.getch makes Curses::KEY_DOWN etc not work
   # Therefore resorting to the generic method
   c = STDIN.getc
-  #c = STDIN.getch(min: 0, time: 5)
+  #c = STDIN.getch(min: 0, time: 5) # Non-blocking for future needs
   case c
   when "\e"    # ANSI escape sequences
     case $stdin.getc
@@ -721,27 +721,6 @@ def get_weather # WEATHER FORECAST FROM MET.NO
     @weather.push([date, hour, wthr, info])
   end
 end
-def get_astro # ASTRONOMICAL DATA FROM MET.NO (official and precise)
-  astro = {}
-  astroURI      = "https://api.met.no/weatherapi/sunrise/2.0/?lat=#{@lat}&lon=#{@lon}&date="
-  10.times do |x|
-    date        = (Time.now + 86400 * x).strftime("%F")
-    d_add       = "#{date}&offset=#{@tz}:00"
-    astro_xml   = astroURI + d_add
-    astro_data  = Net::HTTP.get(URI(astro_xml))
-    sunrise     = astro_data[/<sunrise time="\d\d\d\d-\d\d-\d\dT(\d\d:\d\d:\d\d)/,1]
-    sunrise     = "(no data)" if sunrise == nil
-    sunset      = astro_data[/<sunset time="\d\d\d\d-\d\d-\d\dT(\d\d:\d\d:\d\d)/,1]
-    sunset      = "(no data)" if sunset == nil
-    moonrise    = astro_data[/<moonrise time="\d\d\d\d-\d\d-\d\dT(\d\d:\d\d:\d\d)/,1]
-    moonrise    = "(no data)" if moonrise == nil
-    moonset     = astro_data[/<moonset time="\d\d\d\d-\d\d-\d\dT(\d\d:\d\d:\d\d)/,1]
-    moonset     = "(no data)" if moonset == nil
-    moonphase   = astro_data[/MOON PHASE=(.*)/,1].to_f
-    astro[date] = {"sunrise" => sunrise, "sunset" => sunset, "moonrise" => moonrise, "moonset" => moonset, "moonphase" => moonphase} 
-  end
-  return astro
-end
 def get_planets # PLANET EPHEMERIS DATA
   planets = {}
   12.times do |x|
@@ -914,9 +893,18 @@ def w_u_info # ASTRO INFO IN @w_u
   @w_u.clr
   color  = color_pair(get_cond(@index)) 
   info   = @weather[@index][3].split("\n")
-  mp_n   = (@planets[@weather[@index][0]]["phase"]).round(1)
+  # Moon phase 
+  mp     = 29.530588861
+  nm     = 2459198.177777778
+  y      = @weather[@index][0][0..3].to_i
+  m      = @weather[@index][0][5..6].to_i
+  d      = @weather[@index][0][8..9].to_i
+  h      = @weather[@index][1].to_i
+  jd     = DateTime.new(y, m, d, h, 0, 0, @tz).ajd.to_f
+  phase  = 100*((jd - nm) % mp) / mp 
+  mp_n   = phase.round(1)
   mp_s   = @planets[@weather[@index][0]]["ph_s"]
-  title  = info[0] + " (Moon: #{mp_n} = #{mp_s})"
+  title  = info[0] + " (Moon: #{mp_n}  #{mp_s})"
   @w_u.attron(color) { @w_u << title }
   @w_u.write
   info.shift
@@ -931,33 +919,6 @@ def w_u_info # ASTRO INFO IN @w_u
   @w_u.write
   date = @weather[@index][0]
 
- #begin
- #  @w_u.text += "Sunrise/set        " + @astro[date]["sunrise"] + " / " + @astro[date]["sunset"] + "\n"
- #  @w_u.text += "Moonrise/set       " + @astro[date]["moonrise"] + " / " + @astro[date]["moonset"] + "\n" 
- #  phase = @astro[date]["moonphase"]
- #  if phase < 2.5
- #    phrase = "New moon"
- #  elsif phase < 27.5
- #    phrase = "Waxing crescent"
- #  elsif phase < 32.5
- #    phrase = "First quarter"
- #  elsif phase < 47.5
- #    phrase = "Waxing gibbous"
- #  elsif phase < 52.5
- #    phrase = "Full moon"
- #  elsif phase < 72.5
- #    phrase = "Waning gibbous"
- #  elsif phase < 77.5
- #    phrase = "Last quarter"
- #  elsif phase < 97.5
- #    phrase = "Waning crescent"
- #  else
- #    phrase = "New moon"
- #  end
- #  @w_u.text += "Moon phase         " + @astro[date]["moonphase"].to_s + " (#{phrase})"
- #  @w_u.write
- #rescue
- #end
   @w_u << "\n"
   if @events.has_key?(date)
     text  = "@ " + @events[date]["time"] + ": "
@@ -1117,7 +1078,6 @@ loop do # OUTER LOOP - (catching refreshes via 'r')
   @time  = Time.now.strftime("%H:%M")
   get_weather
   @planets = get_planets
-  #@astro  = get_astro
   @events = get_events
   Thread.new {starchart}
   Thread.new {apod}
