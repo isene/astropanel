@@ -903,8 +903,9 @@ def w_u_info # ASTRO INFO IN @w_u
   jd     = DateTime.new(y, m, d, h, 0, 0, @tz).ajd.to_f
   phase  = 100*((jd - nm) % mp) / mp 
   mp_n   = phase.round(1)
+  mp_ip  = ((1 - (Math.cos((1.8*mp_n).deg)).abs)*100).to_i
   mp_s   = @planets[@weather[@index][0]]["ph_s"]
-  title  = info[0] + " (Moon: #{mp_n}  #{mp_s})"
+  title  = info[0] + " (Moon: #{mp_n}/#{mp_ip}% #{mp_s})"
   @w_u.attron(color) { @w_u << title }
   @w_u.write
   info.shift
