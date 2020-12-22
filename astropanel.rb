@@ -147,13 +147,12 @@ class Ephemeris # THE CORE EPHEMERIS CLASS
     "M" => 356.0470 + 0.98555 * @d},
     #"M" => 356.0470 + 0.9856002585 * @d},
   "moon" => {
-    #"N" => 125.1228 - 0.05283 * @d,
     "N" => 125.1228 - 0.0529538083 * @d,
     "i" => 5.1454,
     "w" => 318.0634 + 0.1643573223 * @d,
     "a" => 60.2666, 
     "e" => 0.054900,
-    "M" => 115.3654 + 13.06447 * @d},
+    "M" => 115.3654 + 13.064886 * @d},
     #"M" => 115.3654 + 13.0649929509 * @d},
   "mercury" => {
     "N" => 48.3313 + 3.24587e-5 * @d,
@@ -608,7 +607,7 @@ def main_getkey # GET KEY FROM USER
     @windlimit = w_b_getstr("Windlimit: ", @windlimit.to_s).to_i
     @w_u.update = true
   when 'b'
-    @bortle = w_b_getstr("Bortle: ", @bortle.to_s).to_i
+    @bortle = w_b_getstr("Bortle: ", @bortle.to_s).to_f.round(1)
     @w_u.update = true
   when 'e'
     ev = "\nUPCOMING EVENTS:\n\n"
@@ -811,31 +810,18 @@ def w_t_info # SHOW INFO IN @w_t
   @w_t.write
 end
 # LEFT WINDOW FUNCTIONS
-def print_sm(ix, date, rise, set, c0, c1, c2)
-  if @planets[date][set][0..1] < @planets[date][rise][0..1] and @weather[ix][1] <= @planets[date][set][0..1]
-    @w_l.p(c0,c0,0," ")
-  elsif @planets[date][set][0..1] < @planets[date][rise][0..1] and @weather[ix][1] >= @planets[date][rise][0..1]
-    @w_l.p(c0,c0,0," ")
-  elsif @weather[ix][1] > @planets[date][rise][0..1] and @weather[ix][1] < @planets[date][set][0..1]
-    @w_l.p(c0,c0,0," ")
-  elsif @weather[ix][1] == @planets[date][rise][0..1]
-    @w_l.p(c1,c1,0," ")
-  elsif @weather[ix][1] == @planets[date][set][0..1]
-    @w_l.p(c2,c2,0," ")
-  else
-    @w_l << " "
-  end
-end
 def print_p(ix, date, rise, set, c)
   @w_l << " "
+  m = "┃"
+  m = "█" if  rise == "srise" or rise == "mrise" 
   if @planets[date][set] == "never"
-    @w_l.p(c,0,0,"┃")
+    @w_l.p(c,0,0,m)
   elsif @planets[date][set][0..1] < @planets[date][rise][0..1] and @weather[ix][1] <= @planets[date][set][0..1]
-    @w_l.p(c,0,0,"┃")
+    @w_l.p(c,0,0,m)
   elsif @planets[date][set][0..1] < @planets[date][rise][0..1] and @weather[ix][1] >= @planets[date][rise][0..1]
-    @w_l.p(c,0,0,"┃")
+    @w_l.p(c,0,0,m)
   elsif @weather[ix][1] >= @planets[date][rise][0..1] and @weather[ix][1] <= @planets[date][set][0..1]
-    @w_l.p(c,0,0,"┃")
+    @w_l.p(c,0,0,m)
   else
     @w_l << " "
   end
@@ -855,16 +841,15 @@ def w_l_info # SHOW WEATHER CONDITION AND RISE/SET IN @w_l
     line   = @weather[ix][1] + @weather[ix][2]
     @w_l.attron(color | marker) { @w_l << line }
     if @events.has_key?(date)
-      @events[date]["time"][0..1] == @weather[ix][1] ? line = "  ! " : line = "    "
+      @events[date]["time"][0..1] == @weather[ix][1] ? line = "  !" : line = "   "
     else
-      line = "    "
+      line = "   "
     end
+    @w_l.attron(color) { @w_l << line }
     begin
-      @w_l.attron(color) { @w_l << line }
-      print_sm(ix, date, "srise", "sset", 226, 193, 214)
-      @w_l << "  "
+      print_p(ix, date, "srise", "sset", 226)
       c0 = ((50 - (@planets[date]["phase"] - 50).abs)/2.7 + 237).to_i
-      print_sm(ix, date, "mrise", "mset", c0, 110, 109)
+      print_p(ix, date, "mrise", "mset", c0)
       print_p(ix, date, "Mrise", "Mset", 130)
       print_p(ix, date, "Vrise", "Vset", 153)
       print_p(ix, date, "Arise", "Aset", 124)
@@ -896,14 +881,16 @@ def w_u_info # ASTRO INFO IN @w_u
   # Moon phase 
   mp     = 29.530588861
   nm     = 2459198.177777778
+  fm     = nm + mp/2
   y      = @weather[@index][0][0..3].to_i
   m      = @weather[@index][0][5..6].to_i
   d      = @weather[@index][0][8..9].to_i
   h      = @weather[@index][1].to_i
   jd     = DateTime.new(y, m, d, h, 0, 0, @tz).ajd.to_f
-  phase  = 100*((jd - nm) % mp) / mp 
-  mp_n   = phase.round(1)
-  mp_ip  = ((1 - (Math.cos((1.8*mp_n).deg)).abs)*100).to_i
+  mp_n   = (100*((jd - nm) % mp) / mp).round(1)
+  ph_a   = ((jd - fm) % mp) / mp * 360
+  mp_ip  = ((1 + Math.cos(ph_a.deg))*50).to_i
+  #mp_ip  = ((1 - (Math.cos((1.8*mp_n).deg)).abs)*100).to_i
   mp_s   = @planets[@weather[@index][0]]["ph_s"]
   title  = info[0] + " (Moon: #{mp_n}/#{mp_ip}% #{mp_s})"
   @w_u.attron(color) { @w_u << title }
@@ -976,7 +963,6 @@ def starchart # GET AND SHOW STARCHART FOR SELECTED TIME
   starchartURI = "https://www.stelvision.com/carte-ciel/visu_carte.php?stelmarq=C&mode_affichage=normal&req=stel&date_j_carte=#{d}&date_m_carte=#{m}&date_a_carte=#{y}&heure_h=#{@weather[@index][1].to_i}&heure_m=00&longi=#{@lon}&lat=#{@lat}&tzone=#{@tz.to_i}.0&dst_offset=1&taille_carte=1200&fond_r=255&fond_v=255&fond_b=255&lang=en"
   `curl -s "#{starchartURI}" > /tmp/stars.png`
   `convert /tmp/stars.png /tmp/starchart.jpg`
-  #`convert /tmp/stars.png -fuzz 25% -fill none -draw "matte 0,0 floodfill" -background black -flatten /tmp/starchart.jpg`
 end
 def apod # GET ASTRONOMY PICTRUE OF THE DAY
   apod = Net::HTTP.get(URI("https://apod.nasa.gov/apod/astropix.html"))
