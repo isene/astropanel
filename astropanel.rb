@@ -1067,7 +1067,7 @@ loop do # OUTER LOOP - (catching refreshes via 'r')
   @planets = get_planets
   @events = get_events
   Thread.new {starchart}
-  Thread.new {apod}
+  #Thread.new {apod}
   begin # Create the four windows/panels 
     Curses.stdscr.bg = 236 # Use for borders
     Curses.stdscr.fill
