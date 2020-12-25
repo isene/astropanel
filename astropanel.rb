@@ -95,7 +95,7 @@ begin # BASIC SETUP
     File.write(Dir.home+'/.ap.conf', conf)
   end
   ## Don't change these
-  @image         = "/tmp/starchart.jpg"
+  @lat > 23 ? @image = "/tmp/starchart.jpg" : @image = "/tmp/apod.jpg"
   @w_l_width     = 70
   @weather_point = []
   @weather       = []
@@ -627,9 +627,9 @@ def main_getkey # GET KEY FROM USER
     end
     @break = true
   when 'A'
+    image_show("clear")
     apod
     @image = "/tmp/apod.jpg"
-    image_show("clear")
     image_show(@image)
   when 'ENTER' # Refresh image
     image_show(@image)
@@ -890,7 +890,6 @@ def w_u_info # ASTRO INFO IN @w_u
   mp_n   = (100*((jd - nm) % mp) / mp).round(1)
   ph_a   = ((jd - fm) % mp) / mp * 360
   mp_ip  = ((1 + Math.cos(ph_a.deg))*50).to_i
-  #mp_ip  = ((1 - (Math.cos((1.8*mp_n).deg)).abs)*100).to_i
   mp_s   = @planets[@weather[@index][0]]["ph_s"]
   title  = info[0] + " (Moon: #{mp_n}/#{mp_ip}% #{mp_s})"
   @w_u.attron(color) { @w_u << title }
@@ -1066,8 +1065,7 @@ loop do # OUTER LOOP - (catching refreshes via 'r')
   get_weather
   @planets = get_planets
   @events = get_events
-  Thread.new {starchart}
-  #Thread.new {apod}
+  @lat > 23 ? Thread.new {starchart} : Thread.new {apod}
   begin # Create the four windows/panels 
     Curses.stdscr.bg = 236 # Use for borders
     Curses.stdscr.fill
