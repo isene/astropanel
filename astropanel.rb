@@ -804,7 +804,7 @@ def w_t_info # SHOW INFO IN @w_t
   @w_t.clr
   text  = " #{@loc} (tz=#{'%02d' % @tz}) Lat: #{@lat}, Lon: #{@lon} " 
   text += "(Bortle #{@bortle})  "
-  text += "Updated: #{@time} (JD: 24#{DateTime.now.amjd().to_f.round(2)})"
+  text += "Updated: #{@time} (JD: 24#{DateTime.now.amjd().to_f.round(4) + 0.5})"
   text += " " * (@w_t.maxx - text.length) if text.length < @w_t.maxx
   @w_t.text = text
   @w_t.write
