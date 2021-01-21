@@ -214,9 +214,11 @@ class Ephemeris # THE CORE EPHEMERIS CLASS
 
   def hms_dms(ra, dec) # Show HMS & DMS
     h, m, s = (ra/15).hms
-    ra_hms  = "#{h.to_s.rjust(2)}h #{m.to_s.rjust(2)}m #{s.to_s.rjust(2)}s"
+    #ra_hms  = "#{h.to_s.rjust(2)}h #{m.to_s.rjust(2)}m #{s.to_s.rjust(2)}s"
+    ra_hms  = "#{h.to_s.rjust(2)}h #{m.to_s.rjust(2)}m"
     d, m, s = dec.hms
-    dec_dms = "#{d.to_s.rjust(3)}° #{m.to_s.rjust(2)}´ #{s.to_s.rjust(2)}˝"
+    #dec_dms = "#{d.to_s.rjust(3)}° #{m.to_s.rjust(2)}´ #{s.to_s.rjust(2)}˝"
+    dec_dms = "#{d.to_s.rjust(3)}° #{m.to_s.rjust(2)}´"
     return ra_hms, dec_dms
   end
 
@@ -270,14 +272,14 @@ class Ephemeris # THE CORE EPHEMERIS CLASS
       return int + frc[1..5]
     end
 
-    out   = "Planet  │ RA          │ Dec          │ d=AU  │ Rise  │ Trans │ Set   \n"
-    out  += "────────┼─────────────┼──────────────┼───────┼───────┼───────┼────── \n"
+    out   = "Planet  │ RA      │ Dec      │ d=AU  │ Rise  │ Trans │ Set   \n"
+    out  += "────────┼─────────┼──────────┼───────┼───────┼───────┼────── \n"
 
     ["sun", "moon", "mercury", "venus", "mars", "jupiter", "saturn", "uranus", "neptune"].each do |p|
       o     = self.body_calc(p)
       n_o   = (p[0].upcase + p[1..-1]).ljust(7)
-      ra_o  = o[3].ljust(11)
-      dec_o = o[4].ljust(12)
+      ra_o  = o[3].ljust(7)
+      dec_o = o[4].ljust(2)
       o[2].class == Float ? d_o = distf(o[2])[0..-3] : d_o = o[2]
       ris_o = o[5][0..-4].rjust(5)
       tra_o = o[6][0..-4].rjust(5)
@@ -705,15 +707,15 @@ def get_weather # WEATHER FORECAST FROM MET.NO
     info  = date + " (" + Date.parse(date).strftime("%A") + ") #{hour}:00\n\n" 
     cld   = "Clouds (-/+)  " + details["cloud_area_fraction"].to_i.to_s + "% (" 
     cld  += details["cloud_area_fraction_low"].to_i.to_s + "% " + details["cloud_area_fraction_high"].to_i.to_s + "%)"
-    info += cld.ljust(37)
+    info += cld.ljust(34)
     details["fog_area_fraction"] == 0 ? fog = "-" : fog = (details["fog_area_fraction"].to_f.round(1)).to_s + "%" 
     info += "Humidity (fog)  " + details["relative_humidity"].to_s + "% (" + fog + ")\n"
-    wnd   = "Wind [gusts]  " + details["wind_speed"].to_s + " m/s (" + wdir + ") [" + details["wind_speed_of_gust"].to_s + " m/s]"
-    info += wnd.ljust(37)
+    wnd   = "Wind [gusts]  " + details["wind_speed"].to_s + " m/s (" + wdir + ") [" + details["wind_speed_of_gust"].to_s + "]"
+    info += wnd.ljust(34)
     info += "Temp (dew)      " + details["air_temperature"].to_s + "°C ("
     info += details["dew_point_temperature"].to_s + "°C)\n"
     air   = "Air pressure  " + details["air_pressure_at_sea_level"].to_i.to_s + " hPa   "
-    info += air.ljust(37)
+    info += air.ljust(34)
     uv    = details["ultraviolet_index_clear_sky"].to_s
     uv    = "-" if uv == ""
     info += "UV index        " + uv + "\n"
