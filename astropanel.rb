@@ -764,6 +764,7 @@ def get_cond(t) # GREEN/YELLOW/RED FROM CONDITIONS
   cond += 2 if details["cloud_area_fraction"].to_i > 90
   cond += 1 if details["relative_humidity"].to_i > @humiditylimit
   cond += 1 if details["air_temperature"].to_i < @templimit
+  cond += 1 if details["air_temperature"].to_i < @templimit - 7
   cond += 1 if details["wind_speed"].to_i > @windlimit
   case cond
   when 0..1
