@@ -1080,9 +1080,9 @@ loop do # OUTER LOOP - (catching refreshes via 'r')
     @w_l = Curses::Window.new(maxy - 2, @w_l_width - 1, 1, 0)
     @w_u = Curses::Window.new(21, maxx - @w_l_width, 1, @w_l_width)
     @w_d = Curses::Window.new(maxy - 23, maxx - @w_l_width, 23, @w_l_width)
-    @w_t.fg, @w_t.bg = 7, 19
+    @w_t.fg, @w_t.bg = 7, 18
     @w_t.attr        = Curses::A_BOLD
-    @w_b.fg, @w_b.bg = 7, 17
+    @w_b.fg, @w_b.bg = 7, 18
     @w_d.fill
     @w_t.update = true
     @w_b.update = true
