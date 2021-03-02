@@ -830,7 +830,7 @@ def print_p(ix, date, rise, set, c)
 end
 def w_l_info # SHOW WEATHER CONDITION AND RISE/SET IN @w_l
   @w_l.clr
-  @w_l.attron(Curses::A_BLINK) { @w_l << "YYYY-MM-DD  HH  Cld%   Hum%    °C   Wind m/s  * ● ○ m V M J S U N\n" }
+  @w_l.p(254, 238, 0, "YYYY-MM-DD  HH  Cld%   Hum%    °C   Wind m/s  * ● ○ m V M J S U N\n")
   ix = 0; t = 1; prev_date = ""
   ix = @index - @w_l.maxy/2 if @index > @w_l.maxy/2 and @weather.size > @w_l.maxy
   while ix < @weather.size and t < @w_l.maxy do
@@ -935,10 +935,9 @@ def image_show(image)# SHOW THE SELECTED IMAGE IN TOP RIGHT WINDOW
     img_max_w   = char_w * (Curses.cols - @w_l_width - 2)
     img_max_h   = char_h * (@w_d.maxy - 2)
     if image == "clear"
-      img_y     -= char_h
       img_max_w += 2
-      img_max_h += char_ h + 2
-      `echo "6;#{img_x};#{img_y};#{img_max_w};#{img_max_h};\n4;\n3;" | #{@w3mimgdisplay}`
+      img_max_h += 2
+      `echo "6;#{img_x};#{img_y};#{img_max_w};#{img_max_h};\n4;\n3;" | #{@w3mimgdisplay} 2>/dev/null`
     else
       img_w,img_h = `identify -format "%[fx:w]x%[fx:h]" #{image} 2>/dev/null`.split('x')
       img_w       = img_w.to_i
@@ -951,10 +950,10 @@ def image_show(image)# SHOW THE SELECTED IMAGE IN TOP RIGHT WINDOW
         img_w = img_w * img_max_h / img_h
         img_h = img_max_h
       end
-      `echo "0;1;#{img_x};#{img_y};#{img_w};#{img_h};;;;;\"#{image}\"\n4;\n3;" | #{@w3mimgdisplay}`
+      `echo "0;1;#{img_x};#{img_y};#{img_w};#{img_h};;;;;\"#{image}\"\n4;\n3;" | #{@w3mimgdisplay} 2>/dev/null`
     end
   rescue
-    @w_u << "Error showing image"
+    w_b_info("Error showing image")
   end
 end
 def starchart # GET AND SHOW STARCHART FOR SELECTED TIME
