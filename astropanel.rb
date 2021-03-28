@@ -1099,7 +1099,11 @@ loop do # OUTER LOOP - (catching refreshes via 'r')
       @w_b.update = true
       # Left and right windows (browser & content viewer)
       w_l_info
-      w_u_info if @w_u.update
+      begin
+        w_u_info if @w_u.update
+      rescue
+        w_u_msg("== No info for past time ==")
+      end
       Curses.curs_set(1) # Clear residual cursor
       Curses.curs_set(0) # ...from editing files 
       main_getkey        # Get key from user 
