@@ -54,6 +54,7 @@ begin # BASIC SETUP
 
   # INITIALIZE VARIABLES 
   @loc, @lat, @lon, @cloudlimit, @humiditylimit, @templimit, @windlimit = ""
+  @noimage = false
   if File.exist?(Dir.home+'/.ap.conf')
     load(Dir.home+'/.ap.conf')
   else
@@ -923,6 +924,7 @@ def w_u_info # ASTRO INFO IN @w_u
 end
 # RIGHT LOWER WINDOW FUNCTIONS
 def image_show(image)# SHOW THE SELECTED IMAGE IN TOP RIGHT WINDOW
+  return if @noimage
   # Pass "clear" to clear the window for previous image
   begin
     terminfo    = `xwininfo -id $(xdotool getactivewindow)`

@@ -74,6 +74,9 @@ you quit via "q". Use "Q" to quit without writing the values (if you want to
 see the forecast for different locations and not overwrite your preferred
 location data). Use 'W' to write new limit values to the config file.
 
+In Termux for Android or environments where images can't be shown in a
+terminal, set this in the config file (.ap.conf): `@noimage = true`
+
 ## Screencast
 Click on this screenshot to see a screencast that will give you a sense of how
 this application works:
