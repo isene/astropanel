@@ -43,14 +43,23 @@ begin # BASIC SETUP
   require 'curses'
   include  Curses
 
+  def cmd?(command)
+    system("which #{command} > /dev/null 2>&1")
+  end
+  if cmd?('/usr/lib/w3m/w3mimgdisplay')
+    @w3mimgdisplay = "/usr/lib/w3m/w3mimgdisplay"
+    @showimage = true
+  else
+    @showimage = false
+  end
+  @showimage = false unless (cmd?('xwininfo') and cmd?('xdotool'))
+
   begin # Check if network is available
     URI.open("https://www.met.no/", :open_timeout=>5)
   rescue
     puts "\nUnable to get data from met.no\n\n"
     exit
   end
-
-  @w3mimgdisplay = "/usr/lib/w3m/w3mimgdisplay"
 
   # INITIALIZE VARIABLES 
   @loc, @lat, @lon, @cloudlimit, @humiditylimit, @templimit, @windlimit = ""
@@ -924,6 +933,7 @@ def w_u_info # ASTRO INFO IN @w_u
 end
 # RIGHT LOWER WINDOW FUNCTIONS
 def image_show(image)# SHOW THE SELECTED IMAGE IN TOP RIGHT WINDOW
+  return unless @showimage
   return if @noimage
   # Pass "clear" to clear the window for previous image
   begin
