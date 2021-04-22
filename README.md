@@ -20,6 +20,22 @@ This program gives you essential data to plan your observations:
 * A table showing RA, Dec, distance, rise, set and transit for the planets
 * Show today's Astronomy Picture Of the Day
 
+## Condition rules
+The rules to calculate whether the condition is green, yellow or red are:
+
+* The limits you set will determine the "negative points" given
+* With 4 or more negative points, the condition becomes red
+* With 2 or 3 negative points, the condition is yellow
+* Less than two negative points makes the condition green
+* A negative point is given if the cloud coverage exceeds your cloud limit
+* Another negative point is given if the cloud coverage is more than (100 - cloud limit)/2
+* Another negative point is given if the cloud coverage is above 90%
+* A negative point is given if the humidity exceeds your humidity limit
+* A negative point is given if the air temperature is below your temperature limit
+* Another negative point is given if the temperature is below your temperature limit - 7°C
+* A negative point is given if the wind exceeds your wind limit
+* Another negative point is given if the wind exceeds twice your wind limit
+
 ## Requirements
 You need to have [Ruby](https://www.ruby-lang.org/en/) installed to use Astropanel.
 You also need to install the latest Ruby Curses library via `gem install curses`.
