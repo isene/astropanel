@@ -676,59 +676,67 @@ def main_getkey # GET KEY FROM USER
   end
 end
 def get_weather # WEATHER FORECAST FROM MET.NO
-  weatherURI     = "https://api.met.no/weatherapi/locationforecast/2.0/complete?"
-  weather_json   = weatherURI + "lat=#{@lat}&lon=#{@lon}"
-  weather_data   = JSON.parse(Net::HTTP.get(URI(weather_json)))
-  @weather_point = weather_data["properties"]["timeseries"]
-  weather_size   = @weather_point.size
-  @weather       = []
-  weather_size.times do |t|
-    details = @weather_point[t]["data"]["instant"]["details"]
-    time    = @weather_point[t]["time"]
-    date    = time[0..9]
-    hour    = time[11..12]
-    wthr    = details["cloud_area_fraction"].to_i.to_s.rjust(5) + "%"
-    wthr   += details["relative_humidity"].to_s.rjust(7)
-    wthr   += details["air_temperature"].to_s.rjust(6)
-    wind    = details["wind_speed"].to_s + " ("
-    case details["wind_from_direction"].to_i
-    when 0..22
-      wdir = "N"
-    when 23..67
-      wdir = "NE"
-    when 68..112
-      wdir = "E"
-    when 113..158
-      wdir = "SE"
-    when 159..203
-      wdir = "S"
-    when 204..249
-      wdir = "SW"
-    when 250..294
-      wdir = "W"
-    when 295..340
-      wdir = "NW"
-    else
-      wdir = "N"
+  begin
+    uri  = URI.parse("https://api.met.no/weatherapi/locationforecast/2.0/complete?lat=#{@lat}&lon=#{@lon}")
+    req  = Net::HTTP::Get.new(uri)
+    req["User-Agent"] = "astropanel/1.0 g@isene.com"
+    json = Net::HTTP.start(uri.hostname, uri.port, :use_ssl => true) do |http|
+      http.request(req)
     end
-    wind += wdir.rjust(2)
-    wthr += wind.rjust(10) + ")"
-    info  = date + " (" + Date.parse(date).strftime("%A") + ") #{hour}:00\n\n" 
-    cld   = "Clouds (-/+)  " + details["cloud_area_fraction"].to_i.to_s + "% (" 
-    cld  += details["cloud_area_fraction_low"].to_i.to_s + "% " + details["cloud_area_fraction_high"].to_i.to_s + "%)"
-    info += cld.ljust(34)
-    details["fog_area_fraction"] == 0 ? fog = "-" : fog = (details["fog_area_fraction"].to_f.round(1)).to_s + "%" 
-    info += "Humidity (fog)  " + details["relative_humidity"].to_s + "% (" + fog + ")\n"
-    wnd   = "Wind [gusts]  " + details["wind_speed"].to_s + " m/s (" + wdir + ") [" + details["wind_speed_of_gust"].to_s + "]"
-    info += wnd.ljust(34)
-    info += "Temp (dew)      " + details["air_temperature"].to_s + "°C ("
-    info += details["dew_point_temperature"].to_s + "°C)\n"
-    air   = "Air pressure  " + details["air_pressure_at_sea_level"].to_i.to_s + " hPa   "
-    info += air.ljust(34)
-    uv    = details["ultraviolet_index_clear_sky"].to_s
-    uv    = "-" if uv == ""
-    info += "UV index        " + uv + "\n"
-    @weather.push([date, hour, wthr, info])
+    weather_data   = JSON.parse(json.body)
+    @weather_point = weather_data["properties"]["timeseries"]
+    weather_size   = @weather_point.size
+    @weather       = []
+    weather_size.times do |t|
+      details = @weather_point[t]["data"]["instant"]["details"]
+      time    = @weather_point[t]["time"]
+      date    = time[0..9]
+      hour    = time[11..12]
+      wthr    = details["cloud_area_fraction"].to_i.to_s.rjust(5) + "%"
+      wthr   += details["relative_humidity"].to_s.rjust(7)
+      wthr   += details["air_temperature"].to_s.rjust(6)
+      wind    = details["wind_speed"].to_s + " ("
+      case details["wind_from_direction"].to_i
+      when 0..22
+        wdir = "N"
+      when 23..67
+        wdir = "NE"
+      when 68..112
+        wdir = "E"
+      when 113..158
+        wdir = "SE"
+      when 159..203
+        wdir = "S"
+      when 204..249
+        wdir = "SW"
+      when 250..294
+        wdir = "W"
+      when 295..340
+        wdir = "NW"
+      else
+        wdir = "N"
+      end
+      wind += wdir.rjust(2)
+      wthr += wind.rjust(10) + ")"
+      info  = date + " (" + Date.parse(date).strftime("%A") + ") #{hour}:00\n\n" 
+      cld   = "Clouds (-/+)  " + details["cloud_area_fraction"].to_i.to_s + "% (" 
+      cld  += details["cloud_area_fraction_low"].to_i.to_s + "% " + details["cloud_area_fraction_high"].to_i.to_s + "%)"
+      info += cld.ljust(34)
+      details["fog_area_fraction"] == 0 ? fog = "-" : fog = (details["fog_area_fraction"].to_f.round(1)).to_s + "%" 
+      info += "Humidity (fog)  " + details["relative_humidity"].to_s + "% (" + fog + ")\n"
+      wnd   = "Wind [gusts]  " + details["wind_speed"].to_s + " m/s (" + wdir + ") [" + details["wind_speed_of_gust"].to_s + "]"
+      info += wnd.ljust(34)
+      info += "Temp (dew)      " + details["air_temperature"].to_s + "°C ("
+      info += details["dew_point_temperature"].to_s + "°C)\n"
+      air   = "Air pressure  " + details["air_pressure_at_sea_level"].to_i.to_s + " hPa   "
+      info += air.ljust(34)
+      uv    = details["ultraviolet_index_clear_sky"].to_s
+      uv    = "-" if uv == ""
+      info += "UV index        " + uv + "\n"
+      @weather.push([date, hour, wthr, info])
+    rescue
+      w_b_info("Not able to retrieve weather data from met.no")
+    end
   end
 end
 def get_planets # PLANET EPHEMERIS DATA
