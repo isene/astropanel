@@ -2,6 +2,9 @@
 
 Terminal program for amateur astronomers with weather forecast.
 
+Install by cloning this repo and putting `astropanel.rb` into your "bin"
+directory. Or you can simply run `gem install astropanel`.
+
 ## Functionality
 This program gives you essential data to plan your observations:
 
