@@ -542,8 +542,8 @@ def getchr # PROCESS KEY PRESSES
   # Note: Curses.getch blanks out @w_t
   # @w_l.getch makes Curses::KEY_DOWN etc not work
   # Therefore resorting to the generic method
-  c = STDIN.getc
-  #c = STDIN.getch(min: 0, time: 5) # Non-blocking for future needs
+  #c = STDIN.getc
+  c = STDIN.getch(min: 0, time: 0.1) # Non-blocking for future needs
   case c
   when "\e"    # ANSI escape sequences
     case $stdin.getc
@@ -1110,6 +1110,7 @@ loop do # OUTER LOOP - (catching refreshes via 'r')
     @w_l.update = true
     @w_u.update = true
     @w_d.update = true
+    ix_change = true
     loop do # INNER, CORE LOOP 
       @min_index = 0
       @max_index = @weather.size - 1
@@ -1119,15 +1120,19 @@ loop do # OUTER LOOP - (catching refreshes via 'r')
       w_b_info(nil) if @w_b.update
       @w_b.update = true
       # Left and right windows (browser & content viewer)
-      w_l_info
-      begin
-        w_u_info if @w_u.update
-      rescue
-        w_u_msg("== No info for past time ==")
+      if ix_change
+        w_l_info
+        begin
+          w_u_info if @w_u.update
+        rescue
+          w_u_msg("== No info for past time ==")
+        end
       end
       Curses.curs_set(1) # Clear residual cursor
       Curses.curs_set(0) # ...from editing files 
-      main_getkey        # Get key from user 
+      ix = @index
+      main_getkey        # Get key from user
+      @index == ix ? ix_change = false : ix_change = true
       @w_u.text = ""
       if @w_d.update
         image_show("clear")
