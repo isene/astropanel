@@ -1,6 +1,6 @@
 # Astropanel
 
-Terminal program for amateur astronomers with weather forecast.
+<img src="logo.jpg" align="left" width="150" height="150">Terminal program for amateur astronomers with weather forecast.
 
 Install by cloning this repo and putting `astropanel.rb` into your "bin"
 directory. Or you can simply run `gem install astropanel`.
