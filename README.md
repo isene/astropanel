@@ -5,6 +5,8 @@ amateur astronomers with weather forecast, ephemeris, astronomical events and
 more. It's what you need to decide wether to take your telescope out for a
 spin.
 
+**NOTE: 2.0: Full rewrite using [rcurses](https://github.com/isene/rcurses)**
+
 Install by cloning this repo and putting `astropanel.rb` into your "bin"
 directory. Or you can simply run `gem install astropanel`.
 
@@ -33,7 +35,7 @@ The rules to calculate whether the condition is green, yellow or red are:
 * With 4 or more negative points, the condition becomes red
 * With 2 or 3 negative points, the condition is yellow
 * Less than two negative points makes the condition green
-* A negative point is given if the cloud coverage exceeds your cloud limit
+* Two negative points are given if the cloud coverage exceeds your cloud limit
 * Another negative point is given if the cloud coverage is more than (100 - cloud limit)/2
 * Another negative point is given if the cloud coverage is above 90%
 * A negative point is given if the humidity exceeds your humidity limit
@@ -44,7 +46,6 @@ The rules to calculate whether the condition is green, yellow or red are:
 
 ## Requirements
 You need to have [Ruby](https://www.ruby-lang.org/en/) installed to use Astropanel.
-You also need to install the latest Ruby Curses library via `gem install curses`.
 
 Then there are two basic prerequisites needed: `x11-utils` and `xdotool`.
 
@@ -78,14 +79,14 @@ Just press "?" to get the help for each possible key binding:
 ```
 KEYS
  ? = Show this help text       ENTER = Refresh starchart/image
- l = Edit Location                 r = Refresh all data
- a = Edit Latitude                 s = Get starchart for selected time
- o = Edit Longitude                S = Open starchart in image program
- c = Edit Cloud limit              A = Show Astronomy Picture Of the Day
- h = Edit Humidity limit           e = Show upcoming events
- t = Edit Temperature limit        W = Write to config file       
- w = Edit Wind limit               q = Quit (write to config file)
- b = Edit Bortle value             Q = Quit (no config write)     
+ l = Edit Location                 r = Redraw all panes and image
+ a = Edit Latitude                 R = Refresh all data (and re-fetch image)
+ o = Edit Longitude                s = Get starchart for selected time          
+ c = Edit Cloud limit              S = Open starchart in image program          
+ h = Edit Humidity limit           A = Show Astronomy Picture Of the Day        
+ t = Edit Temperature limit        e = Show upcoming events                     
+ w = Edit Wind limit               W = Write to config file                     
+ b = Edit Bortle value             q = Quit (write to config file, Q = no write)
 ```
 These should be self explanatory. Until I can figure out how to automatically
 fetch a location's Bortle value (light pollution), this is entered manually.
