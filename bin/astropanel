@@ -14,7 +14,7 @@
 #             for any damages resulting from its use. Further, I am under no
 #             obligation to maintain or extend this software. It is provided 
 #             on an 'as is' basis without any expressed or implied warranty.
-# Version:    2.0: Full rewrite using rcurses (https://github.com/isene/rcurses)
+# Version:    2.2: Fixed help (key '?')
 
 # LOAD MODULES {{{1
 require 'io/console'
@@ -327,6 +327,31 @@ end
 # MAIN APPLICATION {{{1
 class AstroPanelApp
   # Basics {{{2
+  HELP = <<~EOS
+
+   Astropanel gives you essential data to plan your observations:
+   * Weather forecast: Next 9 days with coloring (red/yellow/green) based
+     on your limits for cloud cover, humidity, temperature and wind
+   * Graphic representation of when the Sun, Moon and planets are visible
+     with the Moon's phase showing in how light the representing bar is
+   * Extra information for each day
+   * Astronomical events for each of the 9 days, key 'e' lists them in one view
+   * Star chart showing the selected day and time of day (for latitudes above +23)
+   * A table showing RA, Dec, distance, rise, set and transit for the planets
+   * Show today's Astronomy Picture Of the Day
+
+   KEYS
+   ? = Show this help text       ENTER = Refresh starchart/image
+   l = Edit Location                 r = Redraw all panes and image
+   a = Edit Latitude                 R = Refresh all data (and re-fetch image)
+   o = Edit Longitude                s = Get starchart for selected time
+   c = Edit Cloud limit              S = Open starchart in image program
+   h = Edit Humidity limit           A = Show Astronomy Picture Of the Day
+   t = Edit Temperature limit        e = Show upcoming events
+   w = Edit Wind limit               W = Write to config file
+   b = Edit Bortle value             q = Quit (write to config file, Q = no write)
+  EOS
+
   include Rcurses
   include Rcurses::Cursor
 
@@ -863,7 +888,7 @@ class AstroPanelApp
     when 'PgDOWN'  then @index = [@index + @left.h, @weather.size - 1].min
     when 'HOME'    then @index = 0
     when 'END'     then @index = @weather.size - 1
-    when '?'       then @main.say(@help)
+    when '?'       then @main.say(HELP); getchr
     when 'l'       then @loc           = @footer.ask('Loc? ', @loc)
     when 'a'       then @lat           = @footer.ask('Lat? ', @lat.to_s).to_f
     when 'o'       then @lon           = @footer.ask('Lon? ', @lon.to_s).to_f
