@@ -697,7 +697,8 @@ class AstroPanelApp
   def update_header # {{{2
     body_list = BODIES.map { |b| SYMBOLS[b].fg(BODY_COLORS[b]) }.join(' ')
     _, cols = IO.console.winsize
-    txt = " YYYY-MM-DD  HH   Cld    Hum    Temp     Wind   ! #{body_list}      #{@loc} tz#{@tz}   Lat/Lon #{@lat}/#{@lon}  Bortle #{@bortle}  Updated #{@time}".b
+    jd = DateTime.now.ajd + (Time.now.sec + Time.now.min*60 + Time.now.hour*3600)/86400.0
+    txt = " YYYY-MM-DD  HH   Cld    Hum    Temp     Wind   ! #{body_list}      #{@loc} tz#{@tz} (#{@lat}/#{@lon})  Bortle #{@bortle}  Updated #{@time} JD:#{'%.5f' % jd}".b
     @header.clear
     @header.say(txt.ljust(cols))
   end
