@@ -14,7 +14,7 @@
 #             for any damages resulting from its use. Further, I am under no
 #             obligation to maintain or extend this software. It is provided 
 #             on an 'as is' basis without any expressed or implied warranty.
-# Version:    2.2: Fixed help (key '?')
+# Version:    2.3: Greaceful exit when networks is down
 
 # LOAD MODULES {{{1
 require 'io/console'
@@ -1041,6 +1041,17 @@ class AstroPanelApp
       @events[date] = { time: time, event: event, link: link }
     end
   end
+end
+
+# START PROGRAM {{{1
+begin
+  # a single quick DNS + TCP check
+  TCPSocket.new('api.met.no', 443).close
+rescue SocketError, Socket::ResolutionError => e
+  $stderr.puts "FATAL: can’t resolve api.met.no – network appears down (#{e.message})"
+  $stdin.cooked!
+  $stdin.echo = true
+  exit!
 end
 
 AstroPanelApp.new
