@@ -14,7 +14,7 @@
 #             for any damages resulting from its use. Further, I am under no
 #             obligation to maintain or extend this software. It is provided 
 #             on an 'as is' basis without any expressed or implied warranty.
-# Version:    2.3: Greaceful exit when networks is down
+# Version:    2.4: Removed tty startup/exit codes as rcurses now handles that
 
 # LOAD MODULES {{{1
 require 'io/console'
@@ -31,9 +31,6 @@ include Rcurses::Input
 include Rcurses::Cursor
 
 # BASIC SETUP {{{1
-$stdin.raw!
-$stdin.echo = false
-
 CONFIG_FILE = File.join(Dir.home, '.ap.conf')
 
 # CLASS EXTENSIONS {{{1
@@ -56,13 +53,6 @@ class String # {{{2
   end
 end
 
-# AT_EXIT {{{1
-at_exit do
-  $stdin.cooked!
-  $stdin.echo = true
-  Rcurses.clear_screen
-  Cursor.show
-end
 
 # EPHEMERIS CORE {{{1
 class Ephemeris
