@@ -14,7 +14,7 @@
 #             for any damages resulting from its use. Further, I am under no
 #             obligation to maintain or extend this software. It is provided 
 #             on an 'as is' basis without any expressed or implied warranty.
-# Version:    2.4: Removed tty startup/exit codes as rcurses now handles that
+# Version:    2.5: Bug fix
 
 # LOAD MODULES {{{1
 require 'io/console'
@@ -718,26 +718,39 @@ class AstroPanelApp
     @header.say(txt.ljust(cols))
   end
 
-  def update_titles # {{{2
+  # Update the top‐bar title line, safely handling missing planet data
+  def update_titles
     _, cols = IO.console.winsize
 
-    title  = "                 …#{@cloudlimit}%   …#{@humiditylimit}%    "\
-            "#{@templimit}°C…   …#{@windlimit}m/s".fg(244)
+    # Base limits display
+    title  = "                 …#{@cloudlimit}%   …#{@humiditylimit}%    " \
+             "#{@templimit}°C…   …#{@windlimit}m/s".fg(244)
 
-    date = @weather[@index][:date]
-    hr   = @weather[@index][:hour]
-    col  = cond_color(@index)
-
-    # fetch this day's moon info (illumination % and phase name)
-    mp, mp_name = @planets[date].values_at(:mphase, :mph_s)
+    # Current date/hour
+    if @weather[@index]
+      date = @weather[@index][:date]
+      hr   = @weather[@index][:hour]
+      col  = cond_color(@index)
+    else
+      date = nil
+      hr   = nil
+      col  = 244
+    end
 
     title << '     ⋮ ⋮ ⋮ ⋮ ⋮ ⋮ ⋮ ⋮ ⋮      '.fg(244)
-    title << "#{date} (#{Date.parse(date).strftime("%A")}) #{hr}:00".b.fg(col)
-    title << "  Moon: #{mp_name} (#{mp}%)".fg(244)
+    title << "#{date}#{ date ? " (#{Date.parse(date).strftime("%A")}) #{hr}:00" : ""}".b.fg(col)
 
+    # Safely fetch moon‐phase info (mphase/mph_s) if it exists
+    if date && (pd = @planets[date])
+      mp, mp_name = pd.values_at(:mphase, :mph_s)
+      title << "  Moon: #{mp_name} (#{mp}%)".fg(244)
+    else
+      title << "  Moon: unavailable".fg(244)
+    end
+
+    @titles.clear
     @titles.say(title.ljust(cols))
   end
-
 
   def update_footer # {{{2
     _, cols = IO.console.winsize
@@ -747,71 +760,85 @@ class AstroPanelApp
     @footer.say(cmds.ljust(cols))
   end
 
-  def update_left # {{{2
-    # build an array of all lines
-    date_n = date_n = ''
-    all_lines = @weather.each_with_index.map do |w,i|
-      col = cond_color(i) # choose row‐color
-      mp = @planets[w[:date]][:mphase]
+  # Redraw the left‐pane list of weather + visibility blocks,
+  # Redraw the left‐pane list of weather + visibility blocks,
+  # safely handling missing planet data and converting rise/set to integers
+  def update_left
+    date_o = ''
+    date_n = ''
 
-      # fixed‐width values tinted
-      date_o  =    date_n
-      date_n  =    w[:date] 
-      date_s  = (date_n == date_o ? " ".ljust(10) : date_n) 
-      hour_s  =    w[:hour]
+    all_lines = @weather.each_with_index.map do |w, i|
+      col = cond_color(i)
+
+      # Safely fetch planet data for this date (may be nil)
+      pd = @planets[w[:date]] || {}
+      mp = pd[:mphase]
+
+      # Prepare date display, only show the date when it changes
+      date_o = date_n
+      date_n = w[:date]
+      date_s = (date_n == date_o ? ' '.ljust(10) : date_n)
+
+      # Fixed‐width weather columns
+      hour_s  = w[:hour]
       cloud_s = "#{w[:cloud]}%".rjust(4)
       hum_s   = "#{w[:humidity]}%".rjust(5)
       tmp_s   = "#{w[:temp]}°C".rjust(6)
       wnd_s   = "#{w[:wind]}(#{w[:wdir]})".rjust(8)
 
-      # start composing this row
+      # Build the left‐pane row
       row  = "#{date_s}  ".fg(col)
       ul   = "#{hour_s}  #{cloud_s}  #{hum_s}  #{tmp_s}  #{wnd_s}".fg(col)
       ul   = ul.u if i == @index
       row += ul
 
-      # event marker
+      # Event marker
       if ev = @events[w[:date]] and ev[:time][0..1] == w[:hour]
         row += "  !".fg(col)
       else
         row += "   "
       end
 
-      # one‐space‐prefixed visibility blocks
-      BODIES.each_with_index do |b,i|
-        rise = @planets[w[:date]][:"#{b}_rise"][0..1].to_i rescue nil
-        set  = @planets[w[:date]][:"#{b}_set"][0..1].to_i   rescue nil
-        hr   = w[:hour].to_i
+      # Visibility blocks for Sun, Moon & planets
+      BODIES.each_with_index do |b, j|
+        # Extract just the hour component from rise/set, convert to Integer
+        rise_h = pd[:"#{b}_rise"] ? pd[:"#{b}_rise"][0..1].to_i : nil
+        set_h  = pd[:"#{b}_set"]  ? pd[:"#{b}_set"][0..1].to_i  : nil
+        hr     = w[:hour].to_i
 
-        above = if rise.nil? || set.nil?
-          false
-        elsif rise > set
-          hr >= rise || hr <= set
+        above = if rise_h.nil? || set_h.nil?
+                  false
+                elsif rise_h > set_h
+                  (hr >= rise_h) || (hr <= set_h)
+                else
+                  (hr >= rise_h) && (hr <= set_h)
+                end
+
+        # Choose block character and color
+        block_char = (0..1) === j ? '█' : '┃'
+        if above
+          color = (b == 'moon' ? moon_phase_color(mp) : BODY_COLORS[b])
+          block = block_char.fg(color)
         else
-          hr >= rise && hr <= set
+          block = ' '
         end
-        block = above ? ((0..1) === i ? '█' : '┃').fg(b == 'moon' ? moon_phase_color(mp) : BODY_COLORS[b]) : ' '
+
         row << " #{block}"
       end
 
       row
     end
 
-    # stash into the left pane’s buffer
+    # Write into the pane buffer and center the selection
     @left.text = all_lines.join("\n")
+    height    = @left.h
 
-    # figure out how many rows we can show
-    height = @left.h
-
-    # center the selection (３-row “scroll‐off”)…
     top = @index - (height / 2)
     top = 0 if top < 0
     max_top = all_lines.size - height
     top = max_top if top > max_top
 
     @left.ix = top
-
-    # redraw just the left pane
     @left.refresh
   end
 
@@ -903,12 +930,24 @@ class AstroPanelApp
     update_main
   end
 
-  def get_weather # {{{2
+  # Fetch weather from met.no, but never let network errors crash the app
+  def get_weather
     uri = URI("https://api.met.no/weatherapi/locationforecast/2.0/complete?lat=#{@lat}&lon=#{@lon}")
     req = Net::HTTP::Get.new(uri)
     req['User-Agent'] = 'astropanel/1.0 g@isene.com'
-    res = Net::HTTP.start(uri.hostname, uri.port, use_ssl: true) { |http| http.request(req) }
-    
+
+    begin
+      res = Net::HTTP.start(uri.hostname, uri.port,
+                            use_ssl: true,
+                            read_timeout: 10) do |http|
+        http.request(req)
+      end
+    rescue SocketError, Socket::ResolutionError, Timeout::Error, Net::OpenTimeout => e
+      @footer.say("⚠️ Weather fetch failed: #{e.class}: #{e.message}")
+      @weather = []
+      return
+    end
+
     if res.is_a?(Net::HTTPSuccess)
       series = JSON.parse(res.body)
                     .dig('properties','timeseries') || []
@@ -929,7 +968,7 @@ class AstroPanelApp
         }
       end
     else
-      @footer.say("Weather API error: #{res.code} #{res.message}")
+      @footer.say("⚠️ Weather API error: #{res.code} #{res.message}")
       @weather = []
     end
   end
