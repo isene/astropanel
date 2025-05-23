@@ -14,7 +14,7 @@
 #             for any damages resulting from its use. Further, I am under no
 #             obligation to maintain or extend this software. It is provided 
 #             on an 'as is' basis without any expressed or implied warranty.
-# Version:    2.5: Bug fix
+# Version:    2.6: Bug fix
 
 # LOAD MODULES {{{1
 require 'io/console'
@@ -760,10 +760,7 @@ class AstroPanelApp
     @footer.say(cmds.ljust(cols))
   end
 
-  # Redraw the left‐pane list of weather + visibility blocks,
-  # Redraw the left‐pane list of weather + visibility blocks,
-  # safely handling missing planet data and converting rise/set to integers
-  def update_left
+  def update_left # {{{2
     date_o = ''
     date_n = ''
 
@@ -930,8 +927,8 @@ class AstroPanelApp
     update_main
   end
 
-  # Fetch weather from met.no, but never let network errors crash the app
-  def get_weather
+  def get_weather # {{{2
+    # Fetch weather from met.no, but never let network errors crash the app
     uri = URI("https://api.met.no/weatherapi/locationforecast/2.0/complete?lat=#{@lat}&lon=#{@lon}")
     req = Net::HTTP::Get.new(uri)
     req['User-Agent'] = 'astropanel/1.0 g@isene.com'
@@ -1014,24 +1011,33 @@ class AstroPanelApp
   end
 
   def get_planets # {{{2
+    # Build @planets entries for each unique date in @weather
     @planets.clear
-    12.times do |i|
-      date = (Date.today + i).strftime('%F')
-      ep   = Ephemeris.new(date,@lat,@lon,@tz.to_i)
+
+    # Collect exactly the dates we need (in first-seen order)
+    dates = @weather.map { |w| w[:date] }.uniq
+
+    dates.each do |date|
+      # Compute a fresh Ephemeris for that date
+      ep = Ephemeris.new(date, @lat, @lon, @tz.to_i)
+
+      # Start with the printed table + moon phase info
       entry = {
         table:  ep.print,
-        mphase: ep.mphase,   # e.g. 67.4
-        mph_s:  ep.mph_s     # e.g. "Waxing gibbous"
+        mphase: ep.mphase,
+        mph_s:  ep.mph_s
       }
-      Ephemeris::BODY_ORDER.each do |b|
-        arr = ep.send(b)
-        entry[:"#{b}_rise"] = arr[5]
-        entry[:"#{b}_set"]  = arr[7]
+
+      # Add rise/set times for each body
+      Ephemeris::BODY_ORDER.each do |body|
+        arr = ep.send(body)
+        entry[:"#{body}_rise"] = arr[5]
+        entry[:"#{body}_set"]  = arr[7]
       end
+
       @planets[date] = entry
     end
   end
-
 
   def get_events # {{{2
     @events.clear
