@@ -14,7 +14,7 @@
 #             for any damages resulting from its use. Further, I am under no
 #             obligation to maintain or extend this software. It is provided 
 #             on an 'as is' basis without any expressed or implied warranty.
-# Version:    2.6: Bug fix
+# Version:    2.7: Image redraw fix for i3-wm workspace switching
 
 # LOAD MODULES {{{1
 require 'io/console'
@@ -32,6 +32,7 @@ include Rcurses::Cursor
 
 # BASIC SETUP {{{1
 CONFIG_FILE = File.join(Dir.home, '.ap.conf')
+
 
 # CLASS EXTENSIONS {{{1
 class Numeric # {{{2
@@ -543,6 +544,34 @@ class AstroPanelApp
     # allow override from ~/.ap.conf
     @w3mimgdisplay ||= "/usr/lib/w3m/w3mimgdisplay"
     @showimage     = File.executable?(@w3mimgdisplay)
+    @current_image = nil
+  end
+
+  def check_image_redraw # {{{2
+    # Only check if image display is enabled
+    return unless @showimage
+    
+    # Only check if we have an image currently displayed
+    return unless @current_image && File.exist?(@current_image)
+    
+    begin
+      # Check if we're in the active window - if not, image overlay might be cleared
+      active_window = `xdotool getactivewindow 2>/dev/null`.chomp
+      return if active_window.empty?
+      
+      # Check if this terminal window is the active one
+      current_window = `xdotool getwindowfocus 2>/dev/null`.chomp
+      
+      # Only redraw if we detect a focus change (simple heuristic)
+      if @last_active_window && @last_active_window != active_window && current_window == active_window
+        # Window focus changed and we're now active - redraw image
+        show_image(@current_image)
+      end
+      
+      @last_active_window = active_window
+    rescue
+      # Silently fail - we don't want focus checking to break anything
+    end
   end
 
   def show_image(file=nil) # {{{2
@@ -580,6 +609,12 @@ class AstroPanelApp
           # Clear image area
           `echo "6;#{px};#{py};#{max_w};#{max_h};\n4;\n3;" | #{@w3mimgdisplay} 2>/dev/null`
           `echo "0;1;#{px};#{py};#{iw};#{ih};;;;;\"#{file}\"\n4;\n3;" | #{@w3mimgdisplay} 2>/dev/null`
+          
+          # Track the current image
+          @current_image = file
+        else
+          # Clear image if no file or file doesn't exist
+          @current_image = nil
         end
       end
     rescue Timeout::Error
@@ -659,13 +694,22 @@ class AstroPanelApp
     @left   = Pane.new(  2,    3,        70, rows - 3, 248, 232)
     @main   = Pane.new( 74,    3, cols - 74, rows - 4, 255, 232)
     @footer = Pane.new(  1, cols,      cols,        1, 255,  24)
+    
+    # Add update attributes for selective rendering
+    [@header, @titles, @left, @main, @footer].each do |pane|
+      pane.define_singleton_method(:update) { @update }
+      pane.define_singleton_method(:update=) { |val| @update = val }
+      pane.update = false
+    end
   end
 
   def run_loop # {{{2
     fetch_all
     show_image(@current_image) if @current_image
+    @last_render_state = nil
+    @left.update = @main.update = @header.update = @footer.update = true
     loop do
-      draw_all
+      render_selective
       handle_input
     end
   ensure
@@ -705,8 +749,51 @@ class AstroPanelApp
     COND_COLORS[level]
   end
 
+  def current_render_state # {{{2
+    [@index, @weather.size, @time, @today].hash
+  end
+
+  def needs_render? # {{{2
+    current_state = current_render_state
+    state_changed = @last_render_state != current_state
+    
+    # Also check if any panes need updating
+    panes_need_update = @left.update || @main.update || @header.update || @footer.update
+    
+    needs_update = state_changed || panes_need_update
+    @last_render_state = current_state if state_changed
+    needs_update
+  end
+
+  def render_selective # {{{2
+    return unless needs_render?
+    
+    if @header.update
+      update_header
+      @header.update = false
+    end
+    
+    if @footer.update  
+      update_footer
+      @footer.update = false
+    end
+    
+    if @left.update
+      update_left
+      @left.update = false
+    end
+    
+    if @main.update
+      update_main
+      @main.update = false
+    end
+    
+    update_titles # Always update titles as they're lightweight
+  end
+
   def draw_all # {{{2
-    update_header; update_titles; update_footer; update_left; update_main
+    @header.update = @footer.update = @left.update = @main.update = true
+    render_selective
   end
 
   def update_header # {{{2
@@ -895,36 +982,43 @@ class AstroPanelApp
 
   def handle_input # {{{2
     old_index = @index
-    case getchr
+    key = getchr(1)  # 1 second timeout like rtfm
+    
+    unless key  # If timeout occurred (no key pressed)
+      check_image_redraw  # Check if image needs redraw after workspace switch
+      return
+    end
+    
+    case key
     when 'UP'      then @index = (@index - 1) % @weather.size
     when 'DOWN'    then @index = (@index + 1) % @weather.size
     when 'PgUP'    then @index = [@index - @left.h, 0].max
     when 'PgDOWN'  then @index = [@index + @left.h, @weather.size - 1].min
     when 'HOME'    then @index = 0
     when 'END'     then @index = @weather.size - 1
-    when '?'       then @main.say(HELP); getchr
-    when 'l'       then @loc           = @footer.ask('Loc? ', @loc)
-    when 'a'       then @lat           = @footer.ask('Lat? ', @lat.to_s).to_f
-    when 'o'       then @lon           = @footer.ask('Lon? ', @lon.to_s).to_f
-    when 'c'       then @cloudlimit    = @footer.ask('Maximum Cloud coverage? ', @cloudlimit.to_s).to_i
-    when 'h'       then @humiditylimit = @footer.ask('Maximum Humidity? ', @humiditylimit.to_s).to_i
-    when 't'       then @templimit     = @footer.ask('Minimum Temperature? ', @templimit.to_s).to_i
-    when 'w'       then @windlimit     = @footer.ask('Maximum Wind? ', @windlimit.to_s).to_i
-    when 'b'       then @bortle        = @footer.ask('Bortle? ', @bortle.to_s).to_f
-    when 'e'       then show_all_events
-    when 's'       then starchart
+    when '?'       then @main.say(HELP); getchr; @main.update = true
+    when 'l'       then @loc           = @footer.ask('Loc? ', @loc); @header.update = @footer.update = true
+    when 'a'       then @lat           = @footer.ask('Lat? ', @lat.to_s).to_f; @header.update = @footer.update = true
+    when 'o'       then @lon           = @footer.ask('Lon? ', @lon.to_s).to_f; @header.update = @footer.update = true
+    when 'c'       then @cloudlimit    = @footer.ask('Maximum Cloud coverage? ', @cloudlimit.to_s).to_i; @footer.update = true
+    when 'h'       then @humiditylimit = @footer.ask('Maximum Humidity? ', @humiditylimit.to_s).to_i; @footer.update = true
+    when 't'       then @templimit     = @footer.ask('Minimum Temperature? ', @templimit.to_s).to_i; @footer.update = true
+    when 'w'       then @windlimit     = @footer.ask('Maximum Wind? ', @windlimit.to_s).to_i; @footer.update = true
+    when 'b'       then @bortle        = @footer.ask('Bortle? ', @bortle.to_s).to_f; @footer.update = true
+    when 'e'       then show_all_events; @main.update = true
+    when 's'       then starchart; @main.update = true
     when 'S'       then system("xdg-open /tmp/starchart.jpg &")
-    when 'A'       then apod
-    when 'r'       then refresh_all
-    when 'R'       then fetch_all
-    when 'W'       then save_config; @footer.say("Config saved"); getchr
+    when 'A'       then apod; @main.update = true
+    when 'r'       then refresh_all; @header.update = @left.update = @main.update = @footer.update = true
+    when 'R'       then fetch_all; @header.update = @left.update = @main.update = @footer.update = true
+    when 'W'       then save_config; @footer.say("Config saved"); getchr; @footer.update = true
     when 'q'       then exit
     end
 
-    return if @index == old_index
-
-    update_left
-    update_main
+    # Only update panes if index changed (for navigation keys)
+    if @index != old_index
+      @left.update = @main.update = true
+    end
   end
 
   def get_weather # {{{2
