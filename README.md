@@ -5,10 +5,24 @@ amateur astronomers with weather forecast, ephemeris, astronomical events and
 more. It's what you need to decide wether to take your telescope out for a
 spin.
 
+**NEW in 3.0.0: Major accuracy improvement with IAU 2006 obliquity standard and higher-precision ephemeris calculations from the [ephemeris](https://github.com/isene/ephemeris) project**
+
 **NOTE: 2.0: Full rewrite using [rcurses](https://github.com/isene/rcurses)**
 
-Install by cloning this repo and putting `astropanel.rb` into your "bin"
+Install by cloning this repo and putting `astropanel` into your "bin"
 directory. Or you can simply run `gem install astropanel`.
+
+## Accuracy Improvements in 3.0.0
+This version includes significant accuracy improvements to the ephemeris calculations:
+
+* **IAU 2006 Obliquity Standard**: Updated from the simplified obliquity calculation to the modern International Astronomical Union 2006 standard with proper secular variations
+* **Higher-Precision Orbital Elements**: More accurate mean motion values for all planets based on modern ephemeris data
+* **Enhanced Perturbation Calculations**: Detailed lunar, Jupiter, Saturn, and Uranus perturbation calculations for improved positional accuracy
+* **Better Topocentric Corrections**: Improved geocentric-to-topocentric coordinate transformations
+
+These improvements provide significantly more accurate planetary positions, with improvements of 10+ arcminutes for major planets and up to 1 degree for the Moon compared to previous versions.
+
+The enhanced ephemeris calculations are based on the [ephemeris](https://github.com/isene/ephemeris) project, which implements modern astronomical standards for higher accuracy.
 
 ## Functionality
 This program gives you essential data to plan your observations:
@@ -25,7 +39,7 @@ This program gives you essential data to plan your observations:
   view
 * Star chart showing in the terminal for the selected day and time of day
   PS: The star chart is only generated for latitudes above +23
-* A table showing RA, Dec, distance, rise, set and transit for the planets
+* A table showing RA, Dec, distance, rise, set and transit for the planets with significantly improved accuracy using modern astronomical standards
 * Show today's Astronomy Picture Of the Day
 
 ## Condition rules
@@ -61,8 +75,8 @@ Also, images like the star chart and APOD is only reliably tested on the URXVT
 terminal emulator.
 
 ## Launching Astropanel
-The first time you launch Astropanel (make astropanel.rb executable; `chmod +x
-astropanel.rb` and run it), it will ask for your location, Latitude and
+The first time you launch Astropanel (make astropanel executable; `chmod +x
+astropanel` and run it), it will ask for your location, Latitude and
 Longitude.
 
 When you start the program, it will show you the list of forecast points for
