@@ -14,8 +14,8 @@
 #             for any damages resulting from its use. Further, I am under no
 #             obligation to maintain or extend this software. It is provided 
 #             on an 'as is' basis without any expressed or implied warranty.
-# Version:    3.0.0: Major accuracy improvement with IAU 2006 obliquity standard and
-#             higher-precision ephemeris calculations from https://github.com/isene/ephemeris
+# Version:    4.0.0: Breaking change - requires rcurses 6.0.0+ with explicit initialization
+#             for Ruby 3.4+ compatibility
 
 # LOAD MODULES {{{1
 require 'io/console'
@@ -1249,11 +1249,14 @@ begin
   # a single quick DNS + TCP check
   TCPSocket.new('api.met.no', 443).close
 rescue SocketError, Socket::ResolutionError => e
-  $stderr.puts "FATAL: can’t resolve api.met.no – network appears down (#{e.message})"
+  $stderr.puts "FATAL: can't resolve api.met.no – network appears down (#{e.message})"
   $stdin.cooked!
   $stdin.echo = true
   exit!
 end
+
+# Initialize rcurses (required for rcurses 6.0.0+)
+Rcurses.init!
 
 AstroPanelApp.new
 
