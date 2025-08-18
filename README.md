@@ -1,5 +1,11 @@
 # Astropanel
 
+[![Gem Version](https://badge.fury.io/rb/astropanel.svg)](https://badge.fury.io/rb/astropanel)
+[![Ruby](https://img.shields.io/badge/Ruby-CC342D?style=flat&logo=ruby&logoColor=white)](https://www.ruby-lang.org/)
+[![License](https://img.shields.io/badge/License-Public%20Domain-brightgreen.svg)](https://unlicense.org/)
+[![GitHub stars](https://img.shields.io/github/stars/isene/astropanel.svg)](https://github.com/isene/astropanel/stargazers)
+[![Stay Amazing](https://img.shields.io/badge/Stay-Amazing-blue.svg)](https://isene.org)
+
 <img src="logo.jpg" align="left" width="150" height="150">Terminal program for
 amateur astronomers with weather forecast, ephemeris, astronomical events and
 more. It's what you need to decide wether to take your telescope out for a
