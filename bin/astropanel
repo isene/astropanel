@@ -14,7 +14,7 @@
 #             for any damages resulting from its use. Further, I am under no
 #             obligation to maintain or extend this software. It is provided 
 #             on an 'as is' basis without any expressed or implied warranty.
-# Version:    4.0.0: Breaking change - requires rcurses 6.0.0+ with explicit initialization
+# Version:    4.1.0: Modern image display using termpix gem
 #             for Ruby 3.4+ compatibility
 
 # LOAD MODULES {{{1
@@ -27,6 +27,7 @@ require 'json'
 require 'date'
 require 'time'
 require 'rcurses'
+require 'termpix'
 include Rcurses
 include Rcurses::Input
 include Rcurses::Cursor
@@ -613,34 +614,34 @@ class AstroPanelApp
   end
 
   def setup_image_display # {{{2
-    # allow override from ~/.ap.conf
-    @w3mimgdisplay ||= "/usr/lib/w3m/w3mimgdisplay"
-    @showimage     = File.executable?(@w3mimgdisplay)
+    @termpix = Termpix::Display.new
+    @showimage = @termpix.supported?
     @current_image = nil
   end
 
   def check_image_redraw # {{{2
     # Only check if image display is enabled
     return unless @showimage
-    
+
     # Only check if we have an image currently displayed
     return unless @current_image && File.exist?(@current_image)
-    
+
     begin
-      # Check if we're in the active window - if not, image overlay might be cleared
-      active_window = `xdotool getactivewindow 2>/dev/null`.chomp
-      return if active_window.empty?
-      
-      # Check if this terminal window is the active one
-      current_window = `xdotool getwindowfocus 2>/dev/null`.chomp
-      
-      # Only redraw if we detect a focus change (simple heuristic)
-      if @last_active_window && @last_active_window != active_window && current_window == active_window
-        # Window focus changed and we're now active - redraw image
-        show_image(@current_image)
+      # For w3m protocol, check if image overlay was cleared
+      if @termpix.protocol == :w3m
+        active_window = `xdotool getactivewindow 2>/dev/null`.chomp
+        return if active_window.empty?
+
+        current_window = `xdotool getwindowfocus 2>/dev/null`.chomp
+
+        # Only redraw if we detect a focus change
+        if @last_active_window && @last_active_window != active_window && current_window == active_window
+          show_image(@current_image)
+        end
+
+        @last_active_window = active_window
       end
-      
-      @last_active_window = active_window
+      # Sixel images persist, no redraw needed
     rescue
       # Silently fail - we don't want focus checking to break anything
     end
@@ -650,47 +651,32 @@ class AstroPanelApp
     return unless @showimage
 
     begin
-      # if anything in here takes longer than 2s, we skip it
       Timeout.timeout(2) do
-        # grab window pixel dimensions
-        info = `xwininfo -id $(xdotool getactivewindow) 2>/dev/null`
-        return unless info =~ /Width:\s*(\d+).*Height:\s*(\d+)/m
-        term_w, term_h = $1.to_i, $2.to_i
-
-        # compute character‐cell size
         rows, cols = IO.console.winsize
-        cw = term_w.to_f / cols
-        ch = term_h.to_f / rows
 
-        # top‐left pixel of the image
-        px = ((@main.x - 1) * cw).to_i
-        py = (24 * ch).to_i
+        # Always clear previous image first to prevent overlapping
+        @termpix.clear(
+          x: @main.x - 1,
+          y: 24,
+          width: @main.w,
+          height: rows - 26,
+          term_width: cols,
+          term_height: rows)
 
         if file && File.exist?(file) && File.size(file) > 0
-          # read & scale the image
-          iw, ih = `identify -format "%wx%h" #{file}`.split('x').map(&:to_i)
-          max_w = ((@main.w - 3) * cw).to_i
-          max_h = ((rows - 26) * ch).to_i
-          if iw > max_w
-            ih = ih * max_w / iw; iw = max_w
-          end
-          if ih > max_h
-            iw = iw * max_h / ih; ih = max_h
-          end
-
-          # Clear image area
-          `echo "6;#{px};#{py};#{max_w};#{max_h};\n4;\n3;" | #{@w3mimgdisplay} 2>/dev/null`
-          `echo "0;1;#{px};#{py};#{iw};#{ih};;;;;\"#{file}\"\n4;\n3;" | #{@w3mimgdisplay} 2>/dev/null`
-          
-          # Track the current image
+          # Display new image using termpix (same positioning as original)
+          @termpix.show(file,
+            x: @main.x - 1,
+            y: 24,
+            max_width: @main.w - 3,
+            max_height: rows - 26)
           @current_image = file
         else
-          # Clear image if no file or file doesn't exist
           @current_image = nil
         end
       end
     rescue Timeout::Error
-      # silently skip if w3mimgdisplay/identify/xwininfo hangs
+      # silently skip if image display hangs
     end
   end
 
