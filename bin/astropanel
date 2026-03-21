@@ -14,7 +14,7 @@
 #             for any damages resulting from its use. Further, I am under no
 #             obligation to maintain or extend this software. It is provided 
 #             on an 'as is' basis without any expressed or implied warranty.
-# Version:    4.1.0: Modern image display using termpix gem
+# Version:    4.1.1: Add network error handling & input validation
 #             for Ruby 3.4+ compatibility
 
 # LOAD MODULES {{{1
@@ -559,19 +559,19 @@ class AstroPanelApp
       end
     end
 
-    # 8) Bortle scale (0.0–9.0) {{{3
+    # 8) Bortle scale (1..9) {{{3
     loop do
-      input = @footer.ask("Bortle scale (0.0–9.0): ", "")
+      input = @footer.ask("Bortle scale (1..9): ", "")
       if input.strip.empty?
         @footer.say("Bortle value is required")
         next
       end
       val = input.to_f
-      if (0.0..9.0).include?(val)
+      if (1.0..9.0).include?(val)
         @bortle = val
         break
       else
-        @footer.say("Enter a number between 0.0 and 9.0")
+        @footer.say("Enter a number between 1 and 9")
       end
     end
   end
@@ -667,7 +667,7 @@ class AstroPanelApp
           # Display new image using termpix (same positioning as original)
           @termpix.show(file,
             x: @main.x - 1,
-            y: 24,
+            y: 27,
             max_width: @main.w - 3,
             max_height: rows - 26)
           @current_image = file
@@ -719,9 +719,15 @@ class AstroPanelApp
   end
 
   def apod # {{{2
-    html = Net::HTTP.get(URI('https://apod.nasa.gov/apod/astropix.html'))
+    begin
+      html = Net::HTTP.get(URI('https://apod.nasa.gov/apod/astropix.html'))
+    rescue SocketError, Socket::ResolutionError, Timeout::Error,
+           Net::OpenTimeout, Net::ReadTimeout, Errno::ECONNREFUSED,
+           Errno::EHOSTUNREACH, Errno::ENETUNREACH, OpenURI::HTTPError => e
+      return @footer.say("APOD unavailable (network error: #{e.class})")
+    end
     img  = html[/IMG SRC="(.*?)"/,1]
-    return @footer.say("⚠️ could not parse APOD URL") unless img
+    return @footer.say("Could not parse APOD URL") unless img
 
     full = "https://apod.nasa.gov/apod/#{img}"
     tmp  = "/tmp/apod.jpg"
@@ -731,10 +737,10 @@ class AstroPanelApp
         @current_image = tmp
         show_image(@current_image)
       else
-        @footer.say("⚠️ empty apod.jpg")
+        @footer.say("Empty apod.jpg")
       end
     else
-      @footer.say("⚠️ curl APOD failed")
+      @footer.say("APOD download failed")
     end
   end
 
@@ -844,8 +850,9 @@ class AstroPanelApp
     if @main.update
       update_main
       @main.update = false
+      show_image(@current_image) if @current_image
     end
-    
+
     update_titles # Always update titles as they're lightweight
   end
 
@@ -1056,13 +1063,31 @@ class AstroPanelApp
     when 'END'     then @index = @weather.size - 1
     when '?'       then @main.say(HELP); getchr; @main.update = true
     when 'l'       then @loc           = @footer.ask('Loc? ', @loc); @header.update = @footer.update = true
-    when 'a'       then @lat           = @footer.ask('Lat? ', @lat.to_s).to_f; @header.update = @footer.update = true
-    when 'o'       then @lon           = @footer.ask('Lon? ', @lon.to_s).to_f; @header.update = @footer.update = true
+    when 'a'
+      val = @footer.ask('Lat? (-90..90) ', @lat.to_s).to_f
+      if (-90.0..90.0).include?(val)
+        @lat = val; @header.update = @footer.update = true
+      else
+        @footer.say("Latitude must be -90..90"); @footer.update = true
+      end
+    when 'o'
+      val = @footer.ask('Lon? (-180..180) ', @lon.to_s).to_f
+      if (-180.0..180.0).include?(val)
+        @lon = val; @header.update = @footer.update = true
+      else
+        @footer.say("Longitude must be -180..180"); @footer.update = true
+      end
     when 'c'       then @cloudlimit    = @footer.ask('Maximum Cloud coverage? ', @cloudlimit.to_s).to_i; @footer.update = true
     when 'h'       then @humiditylimit = @footer.ask('Maximum Humidity? ', @humiditylimit.to_s).to_i; @footer.update = true
     when 't'       then @templimit     = @footer.ask('Minimum Temperature? ', @templimit.to_s).to_i; @footer.update = true
     when 'w'       then @windlimit     = @footer.ask('Maximum Wind? ', @windlimit.to_s).to_i; @footer.update = true
-    when 'b'       then @bortle        = @footer.ask('Bortle? ', @bortle.to_s).to_f; @footer.update = true
+    when 'b'
+      val = @footer.ask('Bortle? (1..9) ', @bortle.to_s).to_f
+      if (1.0..9.0).include?(val)
+        @bortle = val; @footer.update = true
+      else
+        @footer.say("Bortle must be 1..9"); @footer.update = true
+      end
     when 'e'       then show_all_events; @main.update = true
     when 's'       then starchart; @main.update = true
     when 'S'       then system("xdg-open /tmp/starchart.jpg &")
@@ -1197,7 +1222,14 @@ class AstroPanelApp
       "https://in-the-sky.org/rss.php?feed=dfan"\
       "&latitude=#{@lat}&longitude=#{@lon}&timezone=#{@loc}"
     )
-    raw = Net::HTTP.get(uri)
+    begin
+      raw = Net::HTTP.get(uri)
+    rescue SocketError, Socket::ResolutionError, Timeout::Error,
+           Net::OpenTimeout, Net::ReadTimeout, Errno::ECONNREFUSED,
+           Errno::EHOSTUNREACH, Errno::ENETUNREACH, OpenURI::HTTPError => e
+      @footer.say("Events unavailable (network error: #{e.class})")
+      return
+    end
 
     raw.scan(/<item>(.*?)<\/item>/m).each do |match|
       item = match.first
@@ -1233,9 +1265,10 @@ end
 # START PROGRAM {{{1
 begin
   # a single quick DNS + TCP check
-  TCPSocket.new('api.met.no', 443).close
-rescue SocketError, Socket::ResolutionError => e
-  $stderr.puts "FATAL: can't resolve api.met.no – network appears down (#{e.message})"
+  Timeout.timeout(5) { TCPSocket.new('api.met.no', 443).close }
+rescue SocketError, Socket::ResolutionError, Timeout::Error,
+       Errno::ECONNREFUSED, Errno::EHOSTUNREACH, Errno::ENETUNREACH => e
+  $stderr.puts "Cannot reach api.met.no, network appears down (#{e.class}: #{e.message})"
   $stdin.cooked!
   $stdin.echo = true
   exit!
