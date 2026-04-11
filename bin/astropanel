@@ -865,7 +865,7 @@ class AstroPanelApp
     body_list = BODIES.map { |b| SYMBOLS[b].fg(BODY_COLORS[b]) }.join(' ')
     _, cols = IO.console.winsize
     jd = DateTime.now.ajd + (Time.now.sec + Time.now.min*60 + Time.now.hour*3600)/86400.0
-    txt = " YYYY-MM-DD  HH   Cld    Hum    Temp     Wind   ! #{body_list}      #{@loc} tz#{@tz} (#{@lat}/#{@lon})  Bortle #{@bortle}  Updated #{@time} JD:#{'%.5f' % jd}".b
+    txt = " YYYY-MM-DD  HH   Cld    Hum    Temp     Wind   ! #{body_list}      #{@loc} tz#{@tz} (#{@lat}/#{@lon})  Bortle #{@bortle}  Updated #{@time} JD:#{'%.5f' % jd}".bd
     @header.clear
     @header.say(txt.ljust(cols))
   end
@@ -890,7 +890,7 @@ class AstroPanelApp
     end
 
     title << '     ⋮ ⋮ ⋮ ⋮ ⋮ ⋮ ⋮ ⋮ ⋮      '.fg(244)
-    title << "#{date}#{ date ? " (#{Date.parse(date).strftime("%A")}) #{hr}:00" : ""}".b.fg(col)
+    title << "#{date}#{ date ? " (#{Date.parse(date).strftime("%A")}) #{hr}:00" : ""}".bd.fg(col)
 
     # Safely fetch moon‐phase info (mphase/mph_s) if it exists
     if date && (pd = @planets[date])
@@ -938,7 +938,7 @@ class AstroPanelApp
       # Build the left‐pane row
       row  = "#{date_s}  ".fg(col)
       ul   = "#{hour_s}  #{cloud_s}  #{hum_s}  #{tmp_s}  #{wnd_s}".fg(col)
-      ul   = ul.u if i == @index
+      ul   = ul.ul if i == @index
       row += ul
 
       # Event marker
